@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌈 WordPop - 영어단어 공부</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ============ 로그인/회원가입 페이지 ============ -->
+  <div id="auth-page" class="page">
+    <div class="auth-container">
+      <div class="auth-logo">
+        <span class="logo-icon">📚</span>
+        <h1>WordPop</h1>
+        <p class="auth-subtitle">영어단어를 팝! 하고 외우자</p>
+      </div>
+
+      <!-- 로그인 폼 -->
+      <div id="login-form" class="auth-form">
+        <h2>로그인</h2>
+        <div class="input-group">
+          <label>이메일</label>
+          <input type="email" id="login-email" placeholder="example@email.com">
+        </div>
+        <div class="input-group">
+          <label>비밀번호</label>
+          <input type="password" id="login-password" placeholder="비밀번호 입력">
+        </div>
+        <button class="btn btn-primary" onclick="handleLogin()">로그인</button>
+        <p class="auth-switch">계정이 없나요? <a href="#" onclick="toggleAuthForm()">회원가입</a></p>
+      </div>
+
+      <!-- 회원가입 폼 -->
+      <div id="register-form" class="auth-form" style="display:none">
+        <h2>회원가입</h2>
+        <div class="input-group">
+          <label>닉네임</label>
+          <input type="text" id="register-name" placeholder="닉네임을 입력하세요">
+        </div>
+        <div class="input-group">
+          <label>이메일</label>
+          <input type="email" id="register-email" placeholder="example@email.com">
+        </div>
+        <div class="input-group">
+          <label>비밀번호</label>
+          <input type="password" id="register-password" placeholder="6자 이상">
+        </div>
+        <div class="input-group">
+          <label>언어 / Ngôn ngữ</label>
+          <div class="lang-select-group">
+            <label class="lang-option">
+              <input type="radio" name="register-lang" value="ko" checked>
+              <span class="lang-chip lang-ko">🇰🇷 한국어</span>
+            </label>
+            <label class="lang-option">
+              <input type="radio" name="register-lang" value="vi">
+              <span class="lang-chip lang-vi">🇻🇳 Tiếng Việt</span>
+            </label>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="handleRegister()">회원가입</button>
+        <p class="auth-switch">이미 계정이 있나요? <a href="#" onclick="toggleAuthForm()">로그인</a></p>
+      </div>
+
+      <div id="auth-message" class="auth-message"></div>
+    </div>
+  </div>
+
+  <!-- ============ 승인 대기 페이지 ============ -->
+  <div id="pending-page" class="page" style="display:none">
+    <div class="pending-container">
+      <span class="pending-icon">⏳</span>
+      <h2>승인 대기 중</h2>
+      <p>관리자의 승인을 기다리고 있어요!</p>
+      <p class="pending-sub">승인이 완료되면 로그인하여 사용할 수 있습니다.</p>
+      <button class="btn btn-secondary" onclick="handleLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- ============ 메인 학습 페이지 ============ -->
+  <div id="main-page" class="page" style="display:none">
+    <!-- 상단 헤더 -->
+    <header class="main-header">
+      <div class="header-left">
+        <span class="logo-small">📚</span>
+        <h1>WordPop</h1>
+      </div>
+      <div class="header-right">
+        <span id="user-lang-badge" class="lang-badge">🇰🇷</span>
+        <span id="user-name" class="user-badge">사용자</span>
+        <button id="admin-btn" class="btn btn-small btn-accent" onclick="showPage('admin-page')" style="display:none">관리자</button>
+        <button class="btn btn-small btn-secondary" onclick="handleLogout()">로그아웃</button>
+      </div>
+    </header>
+
+    <!-- 단어 입력 영역 -->
+    <section class="word-input-section">
+      <div class="input-wrapper">
+        <input type="text" id="word-input" placeholder="영어 단어를 입력하세요..." autocomplete="off">
+        <button class="btn btn-primary btn-add" onclick="addWord()">
+          <span>추가</span>
+        </button>
+      </div>
+      <p id="input-message" class="input-message"></p>
+    </section>
+
+    <!-- 내 학습 통계 -->
+    <section class="my-stats">
+      <div class="stat-bubble">
+        <span class="stat-number" id="my-word-count">0</span>
+        <span class="stat-label">등록 단어</span>
+      </div>
+      <div class="stat-bubble">
+        <span class="stat-number" id="my-click-count">0</span>
+        <span class="stat-label">총 클릭</span>
+      </div>
+      <div class="stat-bubble">
+        <span class="stat-number" id="my-today-count">0</span>
+        <span class="stat-label">오늘 학습</span>
+      </div>
+    </section>
+
+    <!-- 단어 카드 그리드 -->
+    <section class="cards-section">
+      <div class="cards-header">
+        <h2>나의 단어장</h2>
+        <select id="sort-select" onchange="renderCards()">
+          <option value="recent">최근 추가순</option>
+          <option value="clicks">많이 본 순</option>
+          <option value="alpha">알파벳순</option>
+        </select>
+      </div>
+      <div id="cards-grid" class="cards-grid">
+        <div class="empty-state">
+          <span class="empty-icon">🔍</span>
+          <p>단어를 추가해서 공부를 시작하세요!</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ 관리자 대시보드 ============ -->
+  <div id="admin-page" class="page" style="display:none">
+    <header class="main-header">
+      <div class="header-left">
+        <span class="logo-small">📚</span>
+        <h1>WordPop <span class="admin-tag">관리자</span></h1>
+      </div>
+      <div class="header-right">
+        <button class="btn btn-small btn-accent" onclick="showPage('main-page')">학습 페이지</button>
+        <button class="btn btn-small btn-secondary" onclick="handleLogout()">로그아웃</button>
+      </div>
+    </header>
+
+    <!-- 관리자 탭 -->
+    <div class="admin-tabs">
+      <button class="tab-btn active" onclick="switchAdminTab('users', this)">회원 관리</button>
+      <button class="tab-btn" onclick="switchAdminTab('stats', this)">학습 통계</button>
+    </div>
+
+    <!-- 회원 관리 -->
+    <section id="admin-users" class="admin-section">
+      <div class="admin-card">
+        <h3>승인 대기 회원</h3>
+        <div id="pending-users-list" class="user-list">
+          <p class="empty-text">대기 중인 회원이 없습니다.</p>
+        </div>
+      </div>
+      <div class="admin-card">
+        <h3>전체 회원</h3>
+        <div id="all-users-list" class="user-list">
+          <p class="empty-text">회원이 없습니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 학습 통계 -->
+    <section id="admin-stats" class="admin-section" style="display:none">
+      <div class="admin-card">
+        <h3>인기 단어 TOP 20</h3>
+        <div id="popular-words" class="stats-list"></div>
+      </div>
+      <div class="admin-card">
+        <h3>회원별 학습량</h3>
+        <div id="user-stats" class="stats-list"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 토스트 알림 -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
