@@ -578,18 +578,23 @@ async function loadUserWords() {
   try {
     const snapshot = await db.collection('userWords')
       .where('userId', '==', currentUser.uid)
-      .orderBy('createdAt', 'desc')
       .get();
 
     userWords = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-    }));
+    })).sort((a, b) => {
+      // createdAt 기준 최신순 정렬 (Firestore Timestamp 또는 Date 모두 처리)
+      const aTime = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+      const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+      return bTime - aTime;
+    });
 
     renderCards();
     updateMyStats();
   } catch (e) {
     console.error('단어 로드 실패:', e);
+    showToast('단어를 불러오는 중 오류가 발생했어요. 새로고침해 주세요.');
   }
 }
 
