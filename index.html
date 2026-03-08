@@ -102,7 +102,7 @@
       <div class="input-wrapper">
         <input type="text" id="word-input" placeholder="영어 단어를 입력하세요..." autocomplete="off">
         <button class="btn btn-primary btn-add" onclick="addWord()">
-          <span>추가</span>
+          <span id="add-btn-text">추가</span>
         </button>
       </div>
       <p id="input-message" class="input-message"></p>
@@ -112,26 +112,26 @@
     <section class="my-stats">
       <div class="stat-bubble">
         <span class="stat-number" id="my-word-count">0</span>
-        <span class="stat-label">등록 단어</span>
+        <span class="stat-label" id="label-word-count">등록 단어</span>
       </div>
       <div class="stat-bubble">
         <span class="stat-number" id="my-click-count">0</span>
-        <span class="stat-label">총 클릭</span>
+        <span class="stat-label" id="label-total-clicks">총 클릭</span>
       </div>
       <div class="stat-bubble">
         <span class="stat-number" id="my-today-count">0</span>
-        <span class="stat-label">오늘 학습</span>
+        <span class="stat-label" id="label-today">오늘 학습</span>
       </div>
     </section>
 
     <!-- 단어 카드 그리드 -->
     <section class="cards-section">
       <div class="cards-header">
-        <h2>나의 단어장</h2>
+        <h2 id="wordbook-title">나의 단어장</h2>
         <select id="sort-select" onchange="renderCards()">
-          <option value="recent">최근 추가순</option>
-          <option value="clicks">많이 본 순</option>
-          <option value="alpha">알파벳순</option>
+          <option value="recent" id="sort-recent">최근 추가순</option>
+          <option value="clicks" id="sort-clicks">많이 본 순</option>
+          <option value="alpha" id="sort-alpha">알파벳순</option>
         </select>
       </div>
       <div id="cards-grid" class="cards-grid">

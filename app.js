@@ -39,6 +39,7 @@ auth.onAuthStateChanged(async (user) => {
           if (currentUserData.role === 'admin') {
             document.getElementById('admin-btn').style.display = '';
           }
+          applyUILanguage(currentUserData.language);
           showPage('main-page');
           loadUserWords();
         } else {
@@ -62,6 +63,7 @@ auth.onAuthStateChanged(async (user) => {
           document.getElementById('user-name').textContent = currentUserData.displayName;
           document.getElementById('user-lang-badge').textContent = (LANG_CONFIG[selectedLang] || LANG_CONFIG.ko).flag;
           document.getElementById('admin-btn').style.display = '';
+          applyUILanguage(selectedLang);
           showPage('main-page');
           loadUserWords();
         } else {
@@ -194,6 +196,61 @@ const LANG_CONFIG = {
   vi: { code: 'vi', flag: '🇻🇳', label: 'Tiếng Việt' }
 };
 
+const UI_TEXT = {
+  ko: {
+    wordbookTitle: '나의 단어장',
+    labelWordCount: '등록 단어',
+    labelTotalClicks: '총 클릭',
+    labelToday: '오늘 학습',
+    placeholder: '영어 단어를 입력하세요...',
+    addBtn: '추가',
+    sortRecent: '최근 추가순',
+    sortClicks: '많이 본 순',
+    sortAlpha: '알파벳순',
+    cardHint: '클릭하여 뜻 보기',
+    emptyState: '단어를 추가해서 공부를 시작하세요!',
+    searching: '단어 검색 중...',
+    translating: '번역 중...',
+    addSuccess: (w) => `"${w}" 추가 완료!`,
+    duplicate: '이미 추가된 단어예요!',
+    englishOnly: '영어 단어만 입력할 수 있어요!',
+    notFound: '단어를 찾을 수 없어요. 철자를 확인해주세요!'
+  },
+  vi: {
+    wordbookTitle: 'Từ điển của tôi',
+    labelWordCount: 'Từ vựng',
+    labelTotalClicks: 'Tổng lần nhấp',
+    labelToday: 'Học hôm nay',
+    placeholder: 'Nhập từ tiếng Anh...',
+    addBtn: 'Thêm',
+    sortRecent: 'Thêm gần đây',
+    sortClicks: 'Xem nhiều nhất',
+    sortAlpha: 'Theo bảng chữ cái',
+    cardHint: 'Nhấp để xem nghĩa',
+    emptyState: 'Hãy thêm từ để bắt đầu học!',
+    searching: 'Đang tìm từ...',
+    translating: 'Đang dịch...',
+    addSuccess: (w) => `Đã thêm "${w}"!`,
+    duplicate: 'Từ này đã được thêm rồi!',
+    englishOnly: 'Chỉ nhập từ tiếng Anh thôi nhé!',
+    notFound: 'Không tìm thấy từ. Hãy kiểm tra lại chính tả!'
+  }
+};
+
+function applyUILanguage(lang) {
+  const t = UI_TEXT[lang] || UI_TEXT.ko;
+  const el = id => document.getElementById(id);
+  el('wordbook-title').textContent = t.wordbookTitle;
+  el('label-word-count').textContent = t.labelWordCount;
+  el('label-total-clicks').textContent = t.labelTotalClicks;
+  el('label-today').textContent = t.labelToday;
+  el('word-input').placeholder = t.placeholder;
+  el('add-btn-text').textContent = t.addBtn;
+  el('sort-recent').textContent = t.sortRecent;
+  el('sort-clicks').textContent = t.sortClicks;
+  el('sort-alpha').textContent = t.sortAlpha;
+}
+
 function getUserLang() {
   return currentUserData?.language || 'ko';
 }
@@ -246,7 +303,8 @@ async function fetchWordData(word) {
   if (entry.phonetics) {
     for (const p of entry.phonetics) {
       if (p.audio) {
-        audioUrl = p.audio;
+        // //로 시작하는 상대 URL을 https://로 정규화
+        audioUrl = p.audio.startsWith('//') ? 'https:' + p.audio : p.audio;
         break;
       }
     }
@@ -276,21 +334,23 @@ async function addWord() {
 
   if (!word) return;
 
+  const t = UI_TEXT[getUserLang()] || UI_TEXT.ko;
+
   // 영어 단어 확인
   if (!/^[a-zA-Z\s-]+$/.test(word)) {
-    msg.textContent = '영어 단어만 입력할 수 있어요!';
+    msg.textContent = t.englishOnly;
     msg.className = 'input-message error';
     return;
   }
 
   // 중복 확인
   if (userWords.find(w => w.word === word)) {
-    msg.textContent = '이미 추가된 단어예요!';
+    msg.textContent = t.duplicate;
     msg.className = 'input-message error';
     return;
   }
 
-  msg.textContent = '단어 검색 중...';
+  msg.textContent = t.searching;
   msg.className = 'input-message';
 
   try {
@@ -298,7 +358,7 @@ async function addWord() {
 
     // 사용자 언어로 번역
     const userLang = getUserLang();
-    msg.textContent = '번역 중...';
+    msg.textContent = t.translating;
     const translatedMeanings = await translateMeanings(wordData.meanings, userLang);
     wordData.translatedMeanings = translatedMeanings;
 
@@ -336,14 +396,14 @@ async function addWord() {
     userWords.unshift(wordData);
 
     input.value = '';
-    msg.textContent = `"${wordData.word}" 추가 완료!`;
+    msg.textContent = t.addSuccess(wordData.word);
     msg.className = 'input-message success';
     setTimeout(() => { msg.textContent = ''; }, 2000);
 
     renderCards();
     updateMyStats();
   } catch (e) {
-    msg.textContent = e.message || '단어를 찾을 수 없어요. 철자를 확인해주세요!';
+    msg.textContent = e.message || t.notFound;
     msg.className = 'input-message error';
   }
 }
@@ -370,10 +430,11 @@ function renderCards() {
   // 'recent'은 이미 최신순
 
   if (sorted.length === 0) {
+    const t = UI_TEXT[getUserLang()] || UI_TEXT.ko;
     grid.innerHTML = `
       <div class="empty-state">
         <span class="empty-icon">🔍</span>
-        <p>단어를 추가해서 공부를 시작하세요!</p>
+        <p>${t.emptyState}</p>
       </div>`;
     return;
   }
@@ -401,7 +462,7 @@ function renderCards() {
             <span class="card-click-badge">👀 ${w.clickCount}</span>
             <div class="card-word">${w.word}</div>
             <div class="card-phonetic">${w.phonetic}</div>
-            <span class="card-hint">클릭하여 뜻 보기</span>
+            <span class="card-hint">${(UI_TEXT[getUserLang()] || UI_TEXT.ko).cardHint}</span>
           </div>
           <div class="flip-card-back">
             <div class="card-back-word">
