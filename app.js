@@ -28,44 +28,53 @@ let audioCache = {};
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     currentUser = user;
-    const userDoc = await db.collection('users').doc(user.uid).get();
-    if (userDoc.exists) {
-      currentUserData = userDoc.data();
-      if (currentUserData.approved) {
-        document.getElementById('user-name').textContent = currentUserData.displayName || '사용자';
-        const lang = LANG_CONFIG[currentUserData.language] || LANG_CONFIG.ko;
-        document.getElementById('user-lang-badge').textContent = lang.flag;
-        if (currentUserData.role === 'admin') {
-          document.getElementById('admin-btn').style.display = '';
+    try {
+      const userDoc = await db.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        currentUserData = userDoc.data();
+        if (currentUserData.approved) {
+          document.getElementById('user-name').textContent = currentUserData.displayName || '사용자';
+          const lang = LANG_CONFIG[currentUserData.language] || LANG_CONFIG.ko;
+          document.getElementById('user-lang-badge').textContent = lang.flag;
+          if (currentUserData.role === 'admin') {
+            document.getElementById('admin-btn').style.display = '';
+          }
+          showPage('main-page');
+          loadUserWords();
+        } else {
+          showPage('pending-page');
         }
-        showPage('main-page');
-        loadUserWords();
       } else {
-        showPage('pending-page');
+        // 첫 번째 유저는 자동으로 관리자 + 승인
+        const usersSnapshot = await db.collection('users').get();
+        const isFirstUser = usersSnapshot.empty;
+        const selectedLang = window._registerLang || 'ko';
+        await db.collection('users').doc(user.uid).set({
+          email: user.email,
+          displayName: user.displayName || user.email.split('@')[0],
+          language: selectedLang,
+          approved: isFirstUser,
+          role: isFirstUser ? 'admin' : 'user',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        if (isFirstUser) {
+          currentUserData = { approved: true, role: 'admin', language: selectedLang, displayName: user.displayName || user.email.split('@')[0] };
+          document.getElementById('user-name').textContent = currentUserData.displayName;
+          document.getElementById('user-lang-badge').textContent = (LANG_CONFIG[selectedLang] || LANG_CONFIG.ko).flag;
+          document.getElementById('admin-btn').style.display = '';
+          showPage('main-page');
+          loadUserWords();
+        } else {
+          showPage('pending-page');
+        }
       }
-    } else {
-      // 첫 번째 유저는 자동으로 관리자 + 승인
-      const usersSnapshot = await db.collection('users').get();
-      const isFirstUser = usersSnapshot.empty;
-      const selectedLang = window._registerLang || 'ko';
-      await db.collection('users').doc(user.uid).set({
-        email: user.email,
-        displayName: user.displayName || user.email.split('@')[0],
-        language: selectedLang,
-        approved: isFirstUser,
-        role: isFirstUser ? 'admin' : 'user',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      if (isFirstUser) {
-        currentUserData = { approved: true, role: 'admin', language: selectedLang, displayName: user.displayName || user.email.split('@')[0] };
-        document.getElementById('user-name').textContent = currentUserData.displayName;
-        document.getElementById('user-lang-badge').textContent = (LANG_CONFIG[selectedLang] || LANG_CONFIG.ko).flag;
-        document.getElementById('admin-btn').style.display = '';
-        showPage('main-page');
-        loadUserWords();
-      } else {
-        showPage('pending-page');
-      }
+    } catch (err) {
+      console.error('Auth state error:', err);
+      const msg = document.getElementById('auth-message');
+      msg.textContent = 'Firestore 연결 오류: ' + err.message;
+      msg.className = 'auth-message error';
+      showPage('auth-page');
+      auth.signOut();
     }
   } else {
     currentUser = null;
@@ -117,8 +126,11 @@ async function handleLogin() {
   }
 
   try {
+    msg.textContent = '로그인 중...';
+    msg.className = 'auth-message';
     await auth.signInWithEmailAndPassword(email, password);
   } catch (e) {
+    console.error('Login error:', e.code, e.message);
     msg.textContent = getAuthErrorMessage(e.code);
     msg.className = 'auth-message error';
   }
@@ -143,12 +155,15 @@ async function handleRegister() {
   }
 
   try {
+    msg.textContent = '회원가입 중...';
+    msg.className = 'auth-message';
     const langRadio = document.querySelector('input[name="register-lang"]:checked');
     window._registerLang = langRadio ? langRadio.value : 'ko';
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     await cred.user.updateProfile({ displayName: name });
     // onAuthStateChanged에서 Firestore 문서 생성 처리
   } catch (e) {
+    console.error('Register error:', e.code, e.message);
     msg.textContent = getAuthErrorMessage(e.code);
     msg.className = 'auth-message error';
   }
