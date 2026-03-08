@@ -2,12 +2,12 @@
 // Firebase 설정 - 아래 값을 본인의 Firebase 프로젝트 값으로 교체하세요
 // ============================================================
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCmyIOqc3Ah8Z1hPEYrxZCrU8kQlVvwyMk",
+  authDomain: "wordpop-4ff1f.firebaseapp.com",
+  projectId: "wordpop-4ff1f",
+  storageBucket: "wordpop-4ff1f.firebasestorage.app",
+  messagingSenderId: "594872839948",
+  appId: "1:594872839948:web:504c5b48566bec459e2329"
 };
 
 firebase.initializeApp(firebaseConfig);
