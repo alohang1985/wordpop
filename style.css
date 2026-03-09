@@ -1113,11 +1113,15 @@ body {
 .streak-count { font-size: 14px; }
 
 /* ============ 카드 - 동의어/반의어/숙련도 ============ */
-.card-example { display: none; } /* 예문 숨김 */
-.card-def-en {
-  font-size: 12px;
+.card-def-en { display: none; } /* 영어 설명 숨김 */
+.card-example {
+  font-style: italic;
+  font-size: 11px;
   color: #6b7280;
-  display: block;
+  margin: 3px 0 4px 0;
+  padding: 3px 8px;
+  background: rgba(0,0,0,0.04);
+  border-radius: 6px;
   line-height: 1.4;
 }
 .card-syns {

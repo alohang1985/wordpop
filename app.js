@@ -353,10 +353,11 @@ async function fetchWordData(word) {
     }
   }
 
-  // 뜻 정리 (품사 최대 2개, 뜻 1개씩)
+  // 뜻 정리 (품사 최대 2개, 뜻 1개 + 예문 1개)
   const meanings = entry.meanings.slice(0, 2).map(m => ({
     partOfSpeech: m.partOfSpeech,
     definitions: [m.definitions[0]?.definition].filter(Boolean),
+    examples: [m.definitions[0]?.example].filter(Boolean)
   }));
 
   // 동의어 / 반의어
@@ -548,13 +549,12 @@ function renderCards() {
     const meaningsHtml = w.meanings.map((m, mi) => {
       const transDefs = hasTrans && w.translatedMeanings[mi]
         ? w.translatedMeanings[mi].definitions : [];
+      const transText = transDefs[0] || m.definitions[0] || '';
+      const example = (m.examples || [])[0] || '';
       return `<div class="card-meaning-item">
         <span class="card-pos">${m.partOfSpeech}</span>
-        ${m.definitions.map((d, di) => {
-          const transText = transDefs[di] || '';
-          return `<span class="card-def-en">${d}</span>
-            ${transText ? `<div class="card-translated">${transText}</div>` : ''}`;
-        }).join('')}
+        ${transText ? `<div class="card-translated">${transText}</div>` : ''}
+        ${example ? `<div class="card-example">💬 ${example}</div>` : ''}
       </div>`;
     }).join('');
 
