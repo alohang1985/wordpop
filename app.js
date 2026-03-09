@@ -309,9 +309,9 @@ async function translateText(text, targetLang) {
     );
     const data = await res.json();
     if (data?.[0]?.[0]?.[0]) {
-      const translated = data[0][0][0];
+      const translated = data[0][0][0].replace(/[;\s]+$/, '').trim(); // trailing 세미콜론 제거
       if (translated.toUpperCase() === text.toUpperCase()) return null;
-      return translated;
+      return translated || null;
     }
   } catch { /* fallthrough */ }
 
@@ -353,23 +353,30 @@ async function fetchWordData(word) {
   const data = await res.json();
   const entry = data[0];
 
-  // 발음 오디오 URL 찾기
+  // 발음 오디오 URL 찾기 (모든 entry에서 탐색)
   let audioUrl = '';
-  if (entry.phonetics) {
-    for (const p of entry.phonetics) {
+  for (const e of data) {
+    for (const p of (e.phonetics || [])) {
       if (p.audio) {
-        // //로 시작하는 상대 URL을 https://로 정규화
         audioUrl = p.audio.startsWith('//') ? 'https:' + p.audio : p.audio;
         break;
       }
     }
+    if (audioUrl) break;
   }
 
   // 가장 적합한 정의 선택 (고어/희귀/세미콜론 나열 제외, 예문 있는 것 우선)
   function pickBestDef(defs) {
     const archaic = /\barchaic\b|\bdated\b|\bobsolete\b|\bhistorical\b|\brare\b/i;
-    // 세미콜론 나열 정의 (예: "Undersized; inferior; mean.") 제외 — 번역 품질이 매우 나쁨
-    const isSemicolonList = (d) => (d.definition.match(/;/g) || []).length >= 2;
+    // 단어 나열형 정의 제외 (예: "Mean; dirty; contemptible;") — 번역 품질이 매우 나쁨
+    // 문장형 세미콜론 (예: "To rub hard; to wash with rubbing;...")은 허용
+    const isSemicolonList = (d) => {
+      const parts = d.definition.split(';');
+      if (parts.length < 3) return false;
+      // 각 파트가 평균 2단어 이하면 단어 나열로 판단
+      const avgWords = parts.reduce((s, p) => s + p.trim().split(/\s+/).length, 0) / parts.length;
+      return avgWords <= 2;
+    };
     const good = defs.filter(d => d.definition && !archaic.test(d.definition) && !isSemicolonList(d));
     const withExample = good.filter(d => d.example);
     // 좋은 정의가 없으면 세미콜론 제한 없이 고어만 제외
@@ -377,21 +384,45 @@ async function fetchWordData(word) {
     return withExample[0] || good[0] || fallback[0] || defs[0];
   }
 
-  // 동사 우선 정렬 (scrub처럼 동사가 주용도인 경우)
+  // 모든 entry의 meanings를 품사별로 합치기 (scrub처럼 entry가 여러 개인 경우 대비)
   const posOrder = { verb: 0, noun: 1, adjective: 2, adverb: 3 };
-  const sortedMeanings = [...entry.meanings].sort((a, b) =>
+  const mergedByPos = {};
+  for (const e of data) {
+    for (const m of (e.meanings || [])) {
+      if (!mergedByPos[m.partOfSpeech]) {
+        mergedByPos[m.partOfSpeech] = { partOfSpeech: m.partOfSpeech, definitions: [] };
+      }
+      mergedByPos[m.partOfSpeech].definitions.push(...m.definitions);
+    }
+  }
+  const sortedMeanings = Object.values(mergedByPos).sort((a, b) =>
     (posOrder[a.partOfSpeech] ?? 4) - (posOrder[b.partOfSpeech] ?? 4)
   );
 
-  // 뜻 정리 (품사 최대 2개, 뜻 1개 + 예문 1개)
-  const meanings = sortedMeanings.slice(0, 2).map(m => {
+  // 뜻 정리 (품사 최대 2개)
+  // 세미콜론 나열만 있는 품사는 더 나은 대안이 있으면 스킵
+  // pickBestDef와 동일한 기준: 단어 나열형 세미콜론만 필터 (문장형은 허용)
+  const hasSemicolon = (def) => {
+    const parts = def.split(';');
+    if (parts.length < 3) return false;
+    const avgWords = parts.reduce((s, p) => s + p.trim().split(/\s+/).length, 0) / parts.length;
+    return avgWords <= 2;
+  };
+  const allCandidates = sortedMeanings.map(m => {
     const best = pickBestDef(m.definitions);
-    return {
-      partOfSpeech: m.partOfSpeech,
-      definitions: [best?.definition].filter(Boolean),
-      examples: [best?.example].filter(Boolean)
-    };
-  });
+    return best ? { partOfSpeech: m.partOfSpeech, best, isSemicolonOnly: hasSemicolon(best.definition) } : null;
+  }).filter(Boolean);
+
+  const goodCandidates = allCandidates.filter(c => !c.isSemicolonOnly);
+  const chosen = goodCandidates.length > 0
+    ? goodCandidates.slice(0, 2)           // 좋은 정의 우선
+    : allCandidates.slice(0, 2);           // 전부 세미콜론이면 어쩔 수 없이 사용
+
+  const meanings = chosen.map(({ partOfSpeech, best }) => ({
+    partOfSpeech,
+    definitions: [best.definition].filter(Boolean),
+    examples: [best.example].filter(Boolean),
+  }));
 
   // 동의어 / 반의어
   const synonyms = [...new Set(
