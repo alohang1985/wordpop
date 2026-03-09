@@ -1096,3 +1096,271 @@ body {
     align-items: flex-start;
   }
 }
+
+/* ============ 스트릭 뱃지 ============ */
+.streak-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: #fff7ed;
+  border: 1.5px solid #fed7aa;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #ea580c;
+}
+.streak-count { font-size: 14px; }
+
+/* ============ 카드 - 예문/동의어/반의어/숙련도 ============ */
+.card-example {
+  font-style: italic;
+  font-size: 11px;
+  color: #6b7280;
+  margin: 3px 0 6px 0;
+  padding: 4px 8px;
+  background: rgba(0,0,0,0.04);
+  border-radius: 6px;
+  line-height: 1.4;
+}
+.card-syns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+.card-syn-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--mint);
+  margin-right: 2px;
+}
+.ant-label { color: var(--orange); }
+.card-syn-chip {
+  font-size: 11px;
+  background: var(--mint-light);
+  color: #065f46;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-weight: 600;
+}
+.card-ant-chip {
+  font-size: 11px;
+  background: var(--orange-light);
+  color: #9a3412;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-weight: 600;
+}
+.card-mastery {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  font-size: 12px;
+}
+
+/* ============ 퀴즈 버튼 (카드 헤더) ============ */
+.cards-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-quiz {
+  background: linear-gradient(135deg, var(--purple), var(--blue));
+  color: white;
+  border: none;
+  font-weight: 700;
+}
+.btn-quiz:hover { opacity: 0.85; }
+
+/* ============ 🌱 화분 정원 ============ */
+.garden-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 2px solid #bbf7d0;
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin: 0 20px 16px;
+}
+.garden-pot-wrap {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  font-size: 32px;
+}
+.garden-info { flex: 1; min-width: 0; }
+.garden-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.garden-label {
+  font-size: 15px;
+  font-weight: 800;
+  color: #166534;
+}
+.garden-total {
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+  background: #dcfce7;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.garden-bar-outer {
+  height: 8px;
+  background: #d1fae5;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.garden-bar-inner {
+  height: 100%;
+  background: linear-gradient(90deg, #34d399, #059669);
+  border-radius: 10px;
+  transition: width 0.6s ease;
+  width: 0%;
+}
+.garden-hint {
+  font-size: 12px;
+  color: #4ade80;
+  font-weight: 600;
+}
+
+/* ============ 🎯 오늘의 목표 ============ */
+.goal-section {
+  margin: 0 20px 16px;
+  background: white;
+  border: 2px solid #e9d5ff;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+}
+.goal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.goal-text { color: var(--purple); font-weight: 800; }
+.goal-bar-outer {
+  height: 10px;
+  background: var(--purple-light);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.goal-bar-inner {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), var(--pink));
+  border-radius: 10px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+.goal-done .goal-bar-inner { background: linear-gradient(90deg, var(--mint), #059669); }
+.goal-done .goal-text { color: var(--mint); }
+
+/* ============ 🧩 퀴즈 페이지 ============ */
+.quiz-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+.quiz-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.quiz-progress {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-light);
+}
+.quiz-score-badge {
+  background: var(--purple-light);
+  color: var(--purple);
+  font-size: 14px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+.quiz-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.quiz-question-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-light);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.quiz-question {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.5;
+  text-align: center;
+}
+.quiz-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.quiz-btn {
+  padding: 14px 16px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--radius-sm);
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.quiz-btn:hover:not(:disabled) {
+  border-color: var(--purple);
+  background: var(--purple-light);
+}
+.quiz-correct {
+  border-color: var(--mint) !important;
+  background: var(--mint-light) !important;
+  color: #065f46 !important;
+}
+.quiz-wrong {
+  border-color: #ef4444 !important;
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+}
+.quiz-result-emoji { font-size: 48px; text-align: center; margin-bottom: 12px; }
+.quiz-result-score { font-size: 32px; font-weight: 800; text-align: center; color: var(--purple); }
+.quiz-result-msg   { font-size: 18px; font-weight: 700; text-align: center; color: var(--text); margin-top: 8px; }
+#quiz-options .btn { margin: 8px 4px 0; }
+
+@media (max-width: 640px) {
+  .quiz-options { grid-template-columns: 1fr; }
+  .garden-section { margin: 0 12px 12px; }
+  .goal-section   { margin: 0 12px 12px; }
+  .streak-wrap    { display: none; }
+}

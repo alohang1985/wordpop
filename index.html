@@ -120,6 +120,7 @@
       <div class="header-right">
         <span id="user-lang-badge" class="lang-badge">🇰🇷</span>
         <span id="user-name" class="user-badge">사용자</span>
+        <span class="streak-wrap">🔥<span id="streak-count" class="streak-count">0</span></span>
         <button id="admin-btn" class="btn btn-small btn-accent" onclick="showPage('admin-page')" style="display:none">관리자</button>
         <button class="btn btn-small btn-secondary" onclick="handleLogout()">로그아웃</button>
       </div>
@@ -152,15 +153,48 @@
       </div>
     </section>
 
+    <!-- 🌱 나의 정원 -->
+    <section class="garden-section">
+      <div class="garden-pot-wrap">
+        <div id="garden-plant" class="garden-plant">🪨</div>
+      </div>
+      <div class="garden-info">
+        <div class="garden-top-row">
+          <span id="garden-label" class="garden-label">텅빈 화분</span>
+          <span id="garden-total-clicks" class="garden-total">총 0번</span>
+        </div>
+        <div class="garden-bar-outer">
+          <div class="garden-bar-inner" id="garden-progress"></div>
+        </div>
+        <span id="garden-hint" class="garden-hint">1번만 공부하면 씨앗이 돼요!</span>
+      </div>
+    </section>
+
+    <!-- 🎯 오늘의 목표 -->
+    <section class="goal-section">
+      <div class="goal-header">
+        <span>🎯 오늘의 목표</span>
+        <span id="goal-text" class="goal-text">0 / 10</span>
+      </div>
+      <div id="goal-bar-wrap" class="goal-bar-wrap">
+        <div class="goal-bar-outer">
+          <div id="goal-progress" class="goal-bar-inner"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- 단어 카드 그리드 -->
     <section class="cards-section">
       <div class="cards-header">
         <h2 id="wordbook-title">나의 단어장</h2>
-        <select id="sort-select" onchange="renderCards()">
+        <div class="cards-header-right">
+          <button class="btn btn-small btn-quiz" onclick="startQuiz()">🧩 퀴즈</button>
+          <select id="sort-select" onchange="renderCards()">
           <option value="recent" id="sort-recent">최근 추가순</option>
           <option value="clicks" id="sort-clicks">많이 본 순</option>
           <option value="alpha" id="sort-alpha">알파벳순</option>
         </select>
+        </div>
       </div>
       <div id="cards-grid" class="cards-grid">
         <div class="empty-state">
@@ -169,6 +203,30 @@
         </div>
       </div>
     </section>
+  </div>
+
+  <!-- ============ 퀴즈 페이지 ============ -->
+  <div id="quiz-page" class="page" style="display:none">
+    <header class="main-header">
+      <div class="header-left">
+        <span class="logo-small">📚</span>
+        <h1>WordPop</h1>
+      </div>
+      <div class="header-right">
+        <button class="btn btn-small btn-secondary" onclick="showPage('main-page')">← 단어장</button>
+      </div>
+    </header>
+    <div class="quiz-container">
+      <div class="quiz-top">
+        <span id="quiz-progress" class="quiz-progress">1 / 10</span>
+        <span id="quiz-score" class="quiz-score-badge">점수: 0</span>
+      </div>
+      <div class="quiz-card">
+        <div class="quiz-question-label">뜻을 보고 단어를 골라보세요!</div>
+        <div id="quiz-question" class="quiz-question"></div>
+      </div>
+      <div id="quiz-options" class="quiz-options"></div>
+    </div>
   </div>
 
   <!-- ============ 관리자 대시보드 ============ -->

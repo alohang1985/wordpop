@@ -349,17 +349,35 @@ async function fetchWordData(word) {
     }
   }
 
-  // 뜻 정리
+  // 뜻 + 예문 정리
   const meanings = entry.meanings.map(m => ({
     partOfSpeech: m.partOfSpeech,
-    definitions: m.definitions.slice(0, 2).map(d => d.definition)
+    definitions: m.definitions.slice(0, 2).map(d => d.definition),
+    examples: m.definitions.slice(0, 2).map(d => d.example || '').filter(Boolean)
   }));
+
+  // 동의어 / 반의어
+  const synonyms = [...new Set(
+    entry.meanings.flatMap(m => [
+      ...(m.synonyms || []),
+      ...m.definitions.flatMap(d => d.synonyms || [])
+    ])
+  )].slice(0, 5);
+
+  const antonyms = [...new Set(
+    entry.meanings.flatMap(m => [
+      ...(m.antonyms || []),
+      ...m.definitions.flatMap(d => d.antonyms || [])
+    ])
+  )].slice(0, 5);
 
   return {
     word: entry.word,
     phonetic: entry.phonetic || (entry.phonetics?.[0]?.text) || '',
     audioUrl,
-    meanings
+    meanings,
+    synonyms,
+    antonyms
   };
 }
 
@@ -409,6 +427,8 @@ async function addWord() {
       audioUrl: wordData.audioUrl,
       meanings: wordData.meanings,
       translatedMeanings: translatedMeanings,
+      synonyms: wordData.synonyms || [],
+      antonyms: wordData.antonyms || [],
       language: userLang,
       clickCount: 0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -482,26 +502,40 @@ function renderCards() {
     const colorClass = CARD_COLORS[i % CARD_COLORS.length];
     const hasTrans = w.translatedMeanings && w.translatedMeanings.length > 0;
 
+    const lang = getUserLang();
     const meaningsHtml = w.meanings.map((m, mi) => {
       const transDefs = hasTrans && w.translatedMeanings[mi]
         ? w.translatedMeanings[mi].definitions : [];
+      const examples = m.examples || [];
       return `<div class="card-meaning-item">
         <span class="card-pos">${m.partOfSpeech}</span>
         ${m.definitions.map((d, di) => {
           const transText = transDefs[di] || '';
-          return `<span>${d}</span>${transText ? `<div class="card-translated">${transText}</div>` : ''}`;
+          const exText = examples[di] || '';
+          return `<span>${d}</span>
+            ${transText ? `<div class="card-translated">${transText}</div>` : ''}
+            ${exText ? `<div class="card-example">💬 ${exText}</div>` : ''}`;
         }).join('')}
       </div>`;
     }).join('');
+
+    const synsHtml = (w.synonyms?.length)
+      ? `<div class="card-syns"><span class="card-syn-label">≈</span>${w.synonyms.map(s => `<span class="card-syn-chip">${s}</span>`).join('')}</div>` : '';
+    const antsHtml = (w.antonyms?.length)
+      ? `<div class="card-syns"><span class="card-syn-label ant-label">↔</span>${w.antonyms.map(s => `<span class="card-ant-chip">${s}</span>`).join('')}</div>` : '';
+
+    const masteryLevel = w.clickCount >= 20 ? 3 : w.clickCount >= 10 ? 2 : w.clickCount >= 3 ? 1 : 0;
+    const masteryStars = ['', '⭐', '⭐⭐', '⭐⭐⭐'][masteryLevel];
 
     return `
       <div class="flip-card ${colorClass}" id="card-${w.id}" onclick="flipCard('${w.id}')">
         <div class="flip-card-inner">
           <div class="flip-card-front">
             <span class="card-click-badge">👀 ${w.clickCount}</span>
+            ${masteryStars ? `<span class="card-mastery">${masteryStars}</span>` : ''}
             <div class="card-word">${w.word}</div>
             <div class="card-phonetic">${w.phonetic}</div>
-            <span class="card-hint">${(UI_TEXT[getUserLang()] || UI_TEXT.ko).cardHint}</span>
+            <span class="card-hint">${(UI_TEXT[lang] || UI_TEXT.ko).cardHint}</span>
           </div>
           <div class="flip-card-back">
             <div class="card-back-word">
@@ -510,6 +544,7 @@ function renderCards() {
             </div>
             <div class="card-back-phonetic">${w.phonetic}</div>
             <div class="card-meanings">${meaningsHtml}</div>
+            ${synsHtml}${antsHtml}
             <button class="card-delete-btn" onclick="event.stopPropagation(); deleteWord('${w.id}')" title="삭제">✕</button>
           </div>
         </div>
@@ -567,6 +602,7 @@ async function flipCard(wordId) {
     }
 
     updateMyStats();
+    updateStreak();
   }
 }
 
@@ -651,9 +687,16 @@ function updateMyStats() {
     .then(doc => {
       document.getElementById('my-today-count').textContent = doc.exists ? doc.data().clicks : 0;
     })
+    .then(doc => {
+      const clicks = doc.exists ? doc.data().clicks : 0;
+      document.getElementById('my-today-count').textContent = clicks;
+      updateDailyGoal(clicks);
+    })
     .catch(() => {
       document.getElementById('my-today-count').textContent = 0;
     });
+
+  updateGarden();
 }
 
 // ============================================================
@@ -851,6 +894,170 @@ async function loadUserActivityStats() {
   } catch (e) {
     container.innerHTML = '<p class="empty-text">통계를 불러올 수 없습니다.</p>';
   }
+}
+
+// ============================================================
+// 🌱 화분 성장
+// ============================================================
+const PLANT_STAGES = [
+  { min: 0,   emoji: '🪨',          ko: '텅빈 화분',  vi: 'Chậu trống'  },
+  { min: 1,   emoji: '🌱',          ko: '씨앗',       vi: 'Hạt giống'   },
+  { min: 20,  emoji: '🌿',          ko: '새싹',       vi: 'Chồi non'    },
+  { min: 50,  emoji: '🌸',          ko: '꽃',         vi: 'Hoa nở'      },
+  { min: 100, emoji: '🌳',          ko: '나무',       vi: 'Cây xanh'    },
+  { min: 200, emoji: '🌲🌳🌲',     ko: '작은 숲',    vi: 'Rừng nhỏ'    },
+  { min: 500, emoji: '🌲🌳🌲🌳🌲', ko: '울창한 숲',  vi: 'Rừng rậm'    }
+];
+
+function updateGarden() {
+  const totalClicks = userWords.reduce((sum, w) => sum + (w.clickCount || 0), 0);
+  const lang = getUserLang();
+
+  let stageIdx = 0;
+  for (let i = PLANT_STAGES.length - 1; i >= 0; i--) {
+    if (totalClicks >= PLANT_STAGES[i].min) { stageIdx = i; break; }
+  }
+  const stage = PLANT_STAGES[stageIdx];
+  const next  = PLANT_STAGES[stageIdx + 1] || null;
+
+  const plantEl = document.getElementById('garden-plant');
+  const labelEl = document.getElementById('garden-label');
+  const hintEl  = document.getElementById('garden-hint');
+  const fillEl  = document.getElementById('garden-progress');
+  const totalEl = document.getElementById('garden-total-clicks');
+  if (!plantEl) return;
+
+  plantEl.textContent = stage.emoji;
+  labelEl.textContent = lang === 'vi' ? stage.vi : stage.ko;
+  totalEl.textContent = lang === 'vi' ? `${totalClicks} lần` : `총 ${totalClicks}번`;
+
+  if (next) {
+    const pct = ((totalClicks - stage.min) / (next.min - stage.min)) * 100;
+    fillEl.style.width = Math.min(pct, 100) + '%';
+    const rem = next.min - totalClicks;
+    const nextName = lang === 'vi' ? next.vi : next.ko;
+    hintEl.textContent = lang === 'vi'
+      ? `Học thêm ${rem} lần để thành "${nextName}"!`
+      : `앞으로 ${rem}번 더 하면 "${nextName}"이 돼요!`;
+  } else {
+    fillEl.style.width = '100%';
+    hintEl.textContent = lang === 'vi' ? 'Cấp độ tối đa! 🎉' : '최고 레벨 달성! 🎉';
+  }
+}
+
+// ============================================================
+// 🔥 스트릭 (연속 학습일)
+// ============================================================
+function updateStreak() {
+  const today     = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const lastDate  = currentUserData?.lastStudyDate;
+  if (lastDate === today) return;
+
+  let streak = currentUserData?.streakCount || 0;
+  streak = (lastDate === yesterday) ? streak + 1 : 1;
+
+  currentUserData.streakCount    = streak;
+  currentUserData.lastStudyDate  = today;
+
+  const el = document.getElementById('streak-count');
+  if (el) el.textContent = streak;
+
+  db.collection('users').doc(currentUser.uid)
+    .update({ streakCount: streak, lastStudyDate: today })
+    .catch(e => console.error('Streak update failed:', e));
+}
+
+// ============================================================
+// 🎯 오늘의 목표
+// ============================================================
+function updateDailyGoal(todayClicks) {
+  const goal = currentUserData?.dailyGoal || 10;
+  const clicks = todayClicks || 0;
+  const pct = Math.min((clicks / goal) * 100, 100);
+  const fillEl = document.getElementById('goal-progress');
+  const textEl = document.getElementById('goal-text');
+  const wrapEl = document.getElementById('goal-bar-wrap');
+  if (!fillEl) return;
+
+  fillEl.style.width = pct + '%';
+  textEl.textContent = `${Math.min(clicks, goal)} / ${goal}`;
+  if (clicks >= goal && !wrapEl.classList.contains('goal-done')) {
+    wrapEl.classList.add('goal-done');
+    showToast(getUserLang() === 'vi' ? '🎉 Đạt mục tiêu hôm nay!' : '🎉 오늘 목표 달성!');
+  }
+}
+
+// ============================================================
+// 🧩 퀴즈 모드
+// ============================================================
+let quizWords = [], quizIdx = 0, quizScore = 0;
+
+function startQuiz() {
+  const lang = getUserLang();
+  if (userWords.length < 4) {
+    showToast(lang === 'vi' ? 'Cần ít nhất 4 từ để làm quiz!' : '단어가 4개 이상 있어야 퀴즈를 할 수 있어요!');
+    return;
+  }
+  quizWords = [...userWords].sort(() => Math.random() - 0.5).slice(0, Math.min(10, userWords.length));
+  quizIdx = 0;
+  quizScore = 0;
+  showPage('quiz-page');
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion() {
+  const w    = quizWords[quizIdx];
+  const lang = getUserLang();
+  document.getElementById('quiz-progress').textContent = `${quizIdx + 1} / ${quizWords.length}`;
+  document.getElementById('quiz-score').textContent    = lang === 'vi' ? `Điểm: ${quizScore}` : `점수: ${quizScore}`;
+
+  const meanings = w.translatedMeanings || w.meanings;
+  const def = meanings?.[0]?.definitions?.[0] || w.meanings?.[0]?.definitions?.[0] || '';
+  document.getElementById('quiz-question').textContent = def;
+
+  const others  = userWords.filter(u => u.id !== w.id).sort(() => Math.random() - 0.5).slice(0, 3);
+  const options = [w, ...others].sort(() => Math.random() - 0.5);
+  document.getElementById('quiz-options').innerHTML = options.map(o =>
+    `<button class="quiz-btn" data-id="${o.id}" onclick="answerQuiz(this,'${w.id}')">${o.word}</button>`
+  ).join('');
+}
+
+function answerQuiz(btn, correctId) {
+  const isCorrect = btn.dataset.id === correctId;
+  if (isCorrect) quizScore++;
+
+  document.querySelectorAll('.quiz-btn').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.id === correctId) b.classList.add('quiz-correct');
+    else if (b === btn && !isCorrect) b.classList.add('quiz-wrong');
+  });
+
+  setTimeout(() => {
+    quizIdx++;
+    if (quizIdx < quizWords.length) renderQuizQuestion();
+    else showQuizResult();
+  }, 900);
+}
+
+function showQuizResult() {
+  const total = quizWords.length;
+  const lang  = getUserLang();
+  const pct   = Math.round((quizScore / total) * 100);
+  const emoji = pct === 100 ? '🏆' : pct >= 70 ? '😊' : '😅';
+  const msg   = pct === 100
+    ? (lang === 'vi' ? 'Hoàn hảo!' : '완벽해요!')
+    : pct >= 70
+      ? (lang === 'vi' ? 'Làm tốt lắm!' : '잘했어요!')
+      : (lang === 'vi' ? 'Cố gắng thêm nhé!' : '더 연습해봐요!');
+
+  document.getElementById('quiz-question').innerHTML = `
+    <div class="quiz-result-emoji">${emoji}</div>
+    <div class="quiz-result-score">${quizScore} / ${total}</div>
+    <div class="quiz-result-msg">${msg}</div>`;
+  document.getElementById('quiz-options').innerHTML = `
+    <button class="btn btn-primary" onclick="startQuiz()">${lang === 'vi' ? 'Làm lại' : '다시 하기'}</button>
+    <button class="btn btn-secondary" onclick="showPage('main-page')">${lang === 'vi' ? 'Về từ điển' : '단어장으로'}</button>`;
 }
 
 // ============================================================
