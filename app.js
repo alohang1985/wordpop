@@ -322,14 +322,11 @@ async function translateText(text, targetLang) {
 async function translateMeanings(meanings, targetLang) {
   const translated = [];
   for (const m of meanings) {
-    const defs = [];
-    for (const def of m.definitions) {
-      const t = await translateText(def, targetLang);
-      defs.push(t || def);
-    }
+    const def = m.definitions[0] || '';
+    const t = def ? await translateText(def, targetLang) : '';
     translated.push({
       partOfSpeech: m.partOfSpeech,
-      definitions: defs
+      definitions: [t || def]
     });
   }
   return translated;
@@ -356,11 +353,10 @@ async function fetchWordData(word) {
     }
   }
 
-  // 뜻 + 예문 정리
-  const meanings = entry.meanings.map(m => ({
+  // 뜻 정리 (품사 최대 2개, 뜻 1개씩)
+  const meanings = entry.meanings.slice(0, 2).map(m => ({
     partOfSpeech: m.partOfSpeech,
-    definitions: m.definitions.slice(0, 2).map(d => d.definition),
-    examples: m.definitions.slice(0, 2).map(d => d.example || '').filter(Boolean)
+    definitions: [m.definitions[0]?.definition].filter(Boolean),
   }));
 
   // 동의어 / 반의어
@@ -552,15 +548,12 @@ function renderCards() {
     const meaningsHtml = w.meanings.map((m, mi) => {
       const transDefs = hasTrans && w.translatedMeanings[mi]
         ? w.translatedMeanings[mi].definitions : [];
-      const examples = m.examples || [];
       return `<div class="card-meaning-item">
         <span class="card-pos">${m.partOfSpeech}</span>
         ${m.definitions.map((d, di) => {
           const transText = transDefs[di] || '';
-          const exText = examples[di] || '';
-          return `<span>${d}</span>
-            ${transText ? `<div class="card-translated">${transText}</div>` : ''}
-            ${exText ? `<div class="card-example">💬 ${exText}</div>` : ''}`;
+          return `<span class="card-def-en">${d}</span>
+            ${transText ? `<div class="card-translated">${transText}</div>` : ''}`;
         }).join('')}
       </div>`;
     }).join('');
