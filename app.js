@@ -809,9 +809,14 @@ function openWordModal(wordId) {
     ? `<div class="wm-chips"><span class="wm-chip-label ant-label">↔</span>${w.antonyms.map(s => `<span class="card-ant-chip">${s}</span>`).join('')}</div>` : '';
   const memoHtml = w.memo ? `<div class="wm-memo">📝 ${w.memo}</div>` : '';
 
+  const safeAudioUrl = (w.audioUrl || '').replace(/'/g, "\\'");
+  const safeWord = w.word.replace(/'/g, "\\'");
   document.getElementById('word-modal-content').innerHTML = `
     <div class="wm-header">
-      <div class="wm-word">${w.word}${w.audioUrl ? `<button class="btn-audio" onclick="playAudio('${w.audioUrl}')">🔊</button>` : ''}</div>
+      <div class="wm-word">
+        ${w.word}
+        <button class="btn-audio" onclick="playWordAudio('${safeWord}','${safeAudioUrl}')" title="발음 듣기">🔊</button>
+      </div>
       ${w.phonetic ? `<div class="wm-phonetic">${w.phonetic}</div>` : ''}
     </div>
     <div class="wm-meanings">${meaningsHtml}</div>
@@ -828,35 +833,6 @@ function openWordModal(wordId) {
   box.style.animation = 'none';
   box.offsetHeight;
   box.style.animation = '';
-
-  // audioUrl 없으면 API에서 동적으로 가져와 버튼 표시
-  if (!w.audioUrl && !w.meanings?.[0]?.partOfSpeech?.includes('phrase')) {
-    fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(w.word)}`)
-      .then(r => r.json()).then(data => {
-        for (const e of data) {
-          for (const p of (e.phonetics || [])) {
-            if (p.audio) {
-              const url = p.audio.startsWith('//') ? 'https:' + p.audio : p.audio;
-              // 버튼 동적 추가
-              const titleEl = document.querySelector('.wm-word');
-              if (titleEl && !titleEl.querySelector('.btn-audio')) {
-                const btn = document.createElement('button');
-                btn.className = 'btn-audio';
-                btn.title = '발음 듣기';
-                btn.textContent = '🔊';
-                btn.onclick = () => playAudio(url);
-                titleEl.appendChild(btn);
-              }
-              // Firestore에도 저장
-              db.collection('userWords').doc(wordId).update({ audioUrl: url });
-              const idx = userWords.findIndex(u => u.id === wordId);
-              if (idx !== -1) userWords[idx].audioUrl = url;
-              return;
-            }
-          }
-        }
-      }).catch(() => {});
-  }
 
   // 클릭 카운트 증가
   flipCard(wordId);
@@ -882,8 +858,22 @@ function deleteWordFromModal() {
 }
 
 // ============================================================
-// 발음 재생
+// 발음 재생 (오디오 파일 없으면 브라우저 TTS 사용)
 // ============================================================
+function playWordAudio(word, url) {
+  if (url) {
+    playAudio(url);
+  } else {
+    // Web Speech API — 오디오 파일 없는 단어 (tornadoes, dissatisfaction 등)에 사용
+    if (!window.speechSynthesis) { showToast('발음을 재생할 수 없어요 😢'); return; }
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(word);
+    utter.lang = 'en-US';
+    utter.rate = 0.85;
+    window.speechSynthesis.speak(utter);
+  }
+}
+
 function playAudio(url) {
   if (!audioCache[url]) {
     audioCache[url] = new Audio(url);
