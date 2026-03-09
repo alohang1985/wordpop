@@ -786,6 +786,28 @@ body {
   transform: scale(1.1);
 }
 
+.card-refresh-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 48px;
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.flip-card:hover .card-refresh-btn { opacity: 1; }
+.card-refresh-btn:hover { background: #6366f1; }
+.card-refresh-btn:disabled { cursor: not-allowed; }
+
 .card-delete-btn {
   position: absolute;
   top: 12px;

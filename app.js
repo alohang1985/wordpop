@@ -302,6 +302,20 @@ function getUserLang() {
 }
 
 async function translateText(text, targetLang) {
+  // 1차: Google Translate (비공식 API, 품질 우수)
+  try {
+    const res = await fetch(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
+    );
+    const data = await res.json();
+    if (data?.[0]?.[0]?.[0]) {
+      const translated = data[0][0][0];
+      if (translated.toUpperCase() === text.toUpperCase()) return null;
+      return translated;
+    }
+  } catch { /* fallthrough */ }
+
+  // 2차 fallback: MyMemory
   try {
     const res = await fetch(
       `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${targetLang}`
@@ -309,14 +323,12 @@ async function translateText(text, targetLang) {
     const data = await res.json();
     if (data.responseStatus === 200 && data.responseData?.translatedText) {
       const translated = data.responseData.translatedText;
-      // MyMemory가 번역 실패시 원문 그대로 반환하는 경우 체크
       if (translated.toUpperCase() === text.toUpperCase()) return null;
       return translated;
     }
-    return null;
-  } catch {
-    return null;
-  }
+  } catch { /* ignore */ }
+
+  return null;
 }
 
 async function translateMeanings(meanings, targetLang) {
@@ -353,12 +365,16 @@ async function fetchWordData(word) {
     }
   }
 
-  // 가장 적합한 정의 선택 (고어/희귀 제외, 예문 있는 것 우선)
+  // 가장 적합한 정의 선택 (고어/희귀/세미콜론 나열 제외, 예문 있는 것 우선)
   function pickBestDef(defs) {
     const archaic = /\barchaic\b|\bdated\b|\bobsolete\b|\bhistorical\b|\brare\b/i;
-    const good = defs.filter(d => d.definition && !archaic.test(d.definition));
+    // 세미콜론 나열 정의 (예: "Undersized; inferior; mean.") 제외 — 번역 품질이 매우 나쁨
+    const isSemicolonList = (d) => (d.definition.match(/;/g) || []).length >= 2;
+    const good = defs.filter(d => d.definition && !archaic.test(d.definition) && !isSemicolonList(d));
     const withExample = good.filter(d => d.example);
-    return withExample[0] || good[0] || defs[0];
+    // 좋은 정의가 없으면 세미콜론 제한 없이 고어만 제외
+    const fallback = defs.filter(d => d.definition && !archaic.test(d.definition));
+    return withExample[0] || good[0] || fallback[0] || defs[0];
   }
 
   // 동사 우선 정렬 (scrub처럼 동사가 주용도인 경우)
@@ -608,6 +624,7 @@ function renderCards() {
             <div class="card-meanings">${meaningsHtml}</div>
             ${synsHtml}${antsHtml}
             ${memoBack}
+            <button class="card-refresh-btn" onclick="event.stopPropagation(); refreshWord('${safeId}','${w.word.replace(/'/g,"\\'")}')" title="뜻 새로고침">🔄</button>
             <button class="card-delete-btn" onclick="event.stopPropagation(); deleteWord('${safeId}')" title="삭제">✕</button>
           </div>
         </div>
@@ -758,6 +775,38 @@ function playAudio(url) {
 }
 
 // ============================================================
+// 단어 뜻 새로고침 (기존 저장 데이터 재번역)
+// ============================================================
+async function refreshWord(wordId, word) {
+  const lang = getUserLang();
+  const cardEl = document.getElementById(`card-${wordId}`);
+  const refreshBtn = cardEl?.querySelector('.card-refresh-btn');
+  if (refreshBtn) { refreshBtn.textContent = '⏳'; refreshBtn.disabled = true; }
+
+  try {
+    const wordData = await fetchWordData(word);
+    const translatedMeanings = await translateMeanings(wordData.meanings, lang);
+    await db.collection('userWords').doc(wordId).update({
+      meanings: wordData.meanings,
+      translatedMeanings: translatedMeanings,
+      phonetic: wordData.phonetic,
+      audioUrl: wordData.audioUrl,
+      synonyms: wordData.synonyms || [],
+      antonyms: wordData.antonyms || [],
+    });
+    // 로컬 배열도 업데이트
+    const idx = userWords.findIndex(w => w.id === wordId);
+    if (idx !== -1) {
+      userWords[idx] = { ...userWords[idx], meanings: wordData.meanings, translatedMeanings, phonetic: wordData.phonetic, audioUrl: wordData.audioUrl };
+    }
+    renderCards();
+  } catch (e) {
+    console.error('refreshWord error:', e);
+    if (refreshBtn) { refreshBtn.textContent = '❌'; refreshBtn.disabled = false; }
+    setTimeout(() => { if (refreshBtn) { refreshBtn.textContent = '🔄'; } }, 2000);
+  }
+}
+
 // 단어 삭제
 // ============================================================
 async function deleteWord(wordId) {
