@@ -690,12 +690,22 @@ function filterReview() {
 // 📅 학습 달력 토글
 // ============================================================
 function toggleCalendar() {
+  // legacy — kept for compatibility
   const body = document.getElementById('calendar-body');
-  const icon = document.getElementById('cal-toggle-icon');
   if (!body) return;
-  const isHidden = body.style.display === 'none';
-  body.style.display = isHidden ? 'block' : 'none';
-  icon.textContent = isHidden ? '▲ 접기' : '▼ 펼치기';
+  body.style.display = body.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleCalendarModal() {
+  const modal = document.getElementById('calendar-modal');
+  if (!modal) return;
+  const isHidden = modal.style.display === 'none';
+  modal.style.display = isHidden ? 'flex' : 'none';
+  if (isHidden) renderCalendar();
+}
+
+function closeCalendarModal(e) {
+  if (e.target === e.currentTarget) toggleCalendarModal();
 }
 
 // ============================================================

@@ -124,20 +124,92 @@
 
   <!-- ============ 메인 학습 페이지 ============ -->
   <div id="main-page" class="page" style="display:none">
-    <!-- 상단 헤더 -->
+    <!-- 상단 헤더 (2단) -->
     <header class="main-header">
-      <div class="header-left">
-        <span class="logo-small">📚</span>
-        <h1>WordPop</h1>
+      <!-- 1행: 로고 + 유저 정보 -->
+      <div class="header-row1">
+        <div class="header-left">
+          <span class="logo-small">📚</span>
+          <h1>WordPop</h1>
+        </div>
+        <div class="header-right">
+          <span id="user-lang-badge" class="lang-badge">🇰🇷</span>
+          <span id="user-name" class="user-badge">사용자</span>
+          <span class="streak-wrap">🔥<span id="streak-count" class="streak-count">0</span></span>
+          <button id="admin-btn" class="btn btn-small btn-accent" onclick="showPage('admin-page')" style="display:none">관리자</button>
+          <button class="btn btn-small btn-secondary" onclick="handleLogout()">로그아웃</button>
+        </div>
       </div>
-      <div class="header-right">
-        <span id="user-lang-badge" class="lang-badge">🇰🇷</span>
-        <span id="user-name" class="user-badge">사용자</span>
-        <span class="streak-wrap">🔥<span id="streak-count" class="streak-count">0</span></span>
-        <button id="admin-btn" class="btn btn-small btn-accent" onclick="showPage('admin-page')" style="display:none">관리자</button>
-        <button class="btn btn-small btn-secondary" onclick="handleLogout()">로그아웃</button>
+      <!-- 2행: 위젯 (새싹 + 목표 + 스탯 + 달력) -->
+      <div class="header-row2">
+        <!-- 🌱 새싹 -->
+        <div class="hw-garden">
+          <div id="garden-plant" class="mini-plant">🪨</div>
+          <div class="widget-content">
+            <div class="widget-top-row">
+              <span id="garden-label" class="widget-label-green">텅빈 화분</span>
+              <span id="garden-total-clicks" class="widget-count-green">총 0번</span>
+            </div>
+            <div class="mini-progress-outer">
+              <div id="garden-progress" class="mini-progress-inner mini-progress-green"></div>
+            </div>
+            <span id="garden-hint" class="widget-hint-text"></span>
+            <span id="garden-graduated" class="garden-graduated"></span>
+          </div>
+        </div>
+        <div class="hw-sep"></div>
+        <!-- 🎯 오늘의 목표 -->
+        <div class="hw-goal" id="goal-bar-wrap">
+          <span class="widget-icon">🎯</span>
+          <div class="widget-content">
+            <div class="widget-top-row">
+              <span class="widget-label-purple">오늘의 목표</span>
+              <span id="goal-text" class="goal-text">0 / 10</span>
+            </div>
+            <div class="mini-progress-outer mini-progress-outer-purple">
+              <div id="goal-progress" class="mini-progress-inner goal-bar-inner"></div>
+            </div>
+          </div>
+        </div>
+        <div class="hw-sep"></div>
+        <!-- 📈 스탯 -->
+        <div class="hw-stats">
+          <div class="mini-stat">
+            <span id="my-word-count" class="mini-stat-num">0</span>
+            <span id="label-word-count" class="mini-stat-label">등록</span>
+          </div>
+          <div class="mini-stat">
+            <span id="my-click-count" class="mini-stat-num">0</span>
+            <span id="label-total-clicks" class="mini-stat-label">클릭</span>
+          </div>
+          <div class="mini-stat">
+            <span id="my-today-count" class="mini-stat-num">0</span>
+            <span id="label-today" class="mini-stat-label">오늘</span>
+          </div>
+        </div>
+        <div class="hw-sep"></div>
+        <!-- 📅 달력 버튼 -->
+        <button class="hw-cal-btn" onclick="toggleCalendarModal()" title="학습 달력">📅</button>
       </div>
     </header>
+
+    <!-- 📅 달력 모달 -->
+    <div id="calendar-modal" class="cal-modal-overlay" style="display:none" onclick="closeCalendarModal(event)">
+      <div class="cal-modal-box">
+        <div class="cal-modal-header">
+          <span>📅 학습 달력</span>
+          <div class="cal-modal-legend">
+            <span class="legend-box level-0"></span>
+            <span class="legend-box level-1"></span>
+            <span class="legend-box level-2"></span>
+            <span class="legend-box level-3"></span>
+            <span class="legend-box level-4"></span>
+          </div>
+          <button class="cal-modal-close" onclick="toggleCalendarModal()">✕</button>
+        </div>
+        <div id="study-calendar" class="study-calendar"></div>
+      </div>
+    </div>
 
     <!-- 단어 입력 영역 -->
     <section class="word-input-section">
@@ -148,79 +220,6 @@
         </button>
       </div>
       <p id="input-message" class="input-message"></p>
-    </section>
-
-    <!-- 📊 컴팩트 대시보드 위젯 바 -->
-    <section class="widget-bar">
-      <!-- 🌱 정원 위젯 -->
-      <div class="widget-garden">
-        <div id="garden-plant" class="mini-plant">🪨</div>
-        <div class="widget-content">
-          <div class="widget-top-row">
-            <span id="garden-label" class="widget-label-green">텅빈 화분</span>
-            <span id="garden-total-clicks" class="widget-count-green">총 0번</span>
-          </div>
-          <div class="mini-progress-outer">
-            <div id="garden-progress" class="mini-progress-inner mini-progress-green"></div>
-          </div>
-          <span id="garden-hint" class="widget-hint-text"></span>
-          <span id="garden-graduated" class="garden-graduated"></span>
-        </div>
-      </div>
-
-      <div class="widget-sep"></div>
-
-      <!-- 🎯 목표 위젯 -->
-      <div class="widget-goal" id="goal-bar-wrap">
-        <span class="widget-icon">🎯</span>
-        <div class="widget-content">
-          <div class="widget-top-row">
-            <span class="widget-label-purple">오늘의 목표</span>
-            <span id="goal-text" class="goal-text">0 / 10</span>
-          </div>
-          <div class="mini-progress-outer mini-progress-outer-purple">
-            <div id="goal-progress" class="mini-progress-inner goal-bar-inner"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="widget-sep"></div>
-
-      <!-- 📈 통계 위젯 -->
-      <div class="widget-stats">
-        <div class="mini-stat">
-          <span id="my-word-count" class="mini-stat-num">0</span>
-          <span id="label-word-count" class="mini-stat-label">등록</span>
-        </div>
-        <div class="mini-stat">
-          <span id="my-click-count" class="mini-stat-num">0</span>
-          <span id="label-total-clicks" class="mini-stat-label">클릭</span>
-        </div>
-        <div class="mini-stat">
-          <span id="my-today-count" class="mini-stat-num">0</span>
-          <span id="label-today" class="mini-stat-label">오늘</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- 📅 학습 달력 (접기/펼치기) -->
-    <section class="calendar-section">
-      <div class="calendar-title-row calendar-toggle-row" onclick="toggleCalendar()">
-        <span class="calendar-title">📅 학습 달력</span>
-        <div class="cal-title-right">
-          <span class="calendar-legend">
-            <span class="legend-box level-0"></span>
-            <span class="legend-box level-1"></span>
-            <span class="legend-box level-2"></span>
-            <span class="legend-box level-3"></span>
-            <span class="legend-box level-4"></span>
-          </span>
-          <span id="cal-toggle-icon" class="cal-toggle-icon">▼ 펼치기</span>
-        </div>
-      </div>
-      <div id="calendar-body" style="display:none">
-        <div id="study-calendar" class="study-calendar"></div>
-      </div>
     </section>
 
     <!-- 단어 카드 그리드 -->
@@ -236,10 +235,6 @@
             <option value="alpha" id="sort-alpha">알파벳순</option>
           </select>
         </div>
-      </div>
-      <!-- 검색 바 -->
-      <div class="search-wrap">
-        <input type="text" id="search-input" placeholder="🔍 단어 검색..." oninput="filterCards()" autocomplete="off">
       </div>
       <!-- 복습 필요 알림 -->
       <div id="review-notice" class="review-notice" style="display:none">
