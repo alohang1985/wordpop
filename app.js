@@ -739,16 +739,29 @@ function playAudio(url) {
 // 단어 삭제
 // ============================================================
 async function deleteWord(wordId) {
-  if (!confirm('이 단어를 삭제할까요?')) return;
+  const lang = getUserLang();
+  const msg = lang === 'vi'
+    ? '이 단어를 졸업 처리할까요? 학습 기록은 정원에 계속 반영돼요!'
+    : '이 단어를 졸업 처리할까요?\n학습 기록은 정원에 계속 반영돼요! 🎓';
+  if (!confirm(msg)) return;
 
   try {
     const wordIndex = userWords.findIndex(w => w.id === wordId);
-    const word = userWords[wordIndex]?.word;
+    const wordData = userWords[wordIndex];
+    const clicks = wordData?.clickCount || 0;
 
     await db.collection('userWords').doc(wordId).delete();
 
-    if (word) {
-      await db.collection('globalWords').doc(word).update({
+    // 졸업 클릭 수 + 졸업 단어 수를 유저 문서에 누적
+    await db.collection('users').doc(currentUser.uid).update({
+      deletedWordsClicks: firebase.firestore.FieldValue.increment(clicks),
+      graduatedCount: firebase.firestore.FieldValue.increment(1)
+    }).catch(() => {});
+    currentUserData.deletedWordsClicks = (currentUserData.deletedWordsClicks || 0) + clicks;
+    currentUserData.graduatedCount = (currentUserData.graduatedCount || 0) + 1;
+
+    if (wordData?.word) {
+      await db.collection('globalWords').doc(wordData.word).update({
         totalAdded: firebase.firestore.FieldValue.increment(-1)
       }).catch(() => {});
     }
@@ -756,9 +769,9 @@ async function deleteWord(wordId) {
     userWords = userWords.filter(w => w.id !== wordId);
     renderCards();
     updateMyStats();
-    showToast('단어가 삭제되었어요!');
+    showToast(lang === 'vi' ? '🎓 졸업!' : '🎓 졸업 처리됐어요!');
   } catch (e) {
-    showToast('삭제 중 오류가 발생했어요.');
+    showToast('처리 중 오류가 발생했어요.');
   }
 }
 
@@ -1062,7 +1075,10 @@ const PLANT_STAGES = [
 ];
 
 function updateGarden() {
-  const totalClicks = userWords.reduce((sum, w) => sum + (w.clickCount || 0), 0);
+  const currentClicks = userWords.reduce((sum, w) => sum + (w.clickCount || 0), 0);
+  const deletedClicks = currentUserData?.deletedWordsClicks || 0;
+  const totalClicks = currentClicks + deletedClicks;
+  const graduatedCount = currentUserData?.graduatedCount || 0;
   const lang = getUserLang();
 
   let stageIdx = 0;
@@ -1094,6 +1110,14 @@ function updateGarden() {
   } else {
     fillEl.style.width = '100%';
     hintEl.textContent = lang === 'vi' ? 'Cấp độ tối đa! 🎉' : '최고 레벨 달성! 🎉';
+  }
+
+  // 졸업 단어 수 표시
+  const graduatedEl = document.getElementById('garden-graduated');
+  if (graduatedEl) {
+    graduatedEl.textContent = graduatedCount > 0
+      ? (lang === 'vi' ? `🎓 ${graduatedCount}개 단어 졸업` : `🎓 졸업 단어 ${graduatedCount}개`)
+      : '';
   }
 }
 
