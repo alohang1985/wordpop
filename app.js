@@ -348,7 +348,24 @@ async function translateMeanings(meanings, targetLang) {
 // Dictionary API
 // ============================================================
 async function fetchWordData(word) {
-  const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+  // ── 구/표현 처리 (공백 포함 입력: "be related to", "chemical waste" 등) ──
+  const cleanWord = word.replace(/\s*[~～…]+\s*$/, '').trim(); // 끝의 ~ 제거
+  if (cleanWord.includes(' ')) {
+    return {
+      word: cleanWord,
+      phonetic: '',
+      audioUrl: '',
+      meanings: [{
+        partOfSpeech: 'phrase',
+        definitions: [cleanWord], // translateMeanings가 이 문자열을 번역함
+        examples: []
+      }],
+      synonyms: [],
+      antonyms: []
+    };
+  }
+
+  const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`);
   if (!res.ok) throw new Error('단어를 찾을 수 없습니다.');
   const data = await res.json();
   const entry = data[0];
@@ -461,8 +478,8 @@ async function addWord() {
 
   const t = UI_TEXT[getUserLang()] || UI_TEXT.ko;
 
-  // 영어 단어 확인
-  if (!/^[a-zA-Z\s-]+$/.test(word)) {
+  // 영어 단어/구 확인 (단어, 구, 숙어 모두 허용 — ~ 기호도 허용)
+  if (!/^[a-zA-Z\s\-'~～…]+$/.test(word)) {
     msg.textContent = t.englishOnly;
     msg.className = 'input-message error';
     return;
@@ -616,7 +633,7 @@ function renderCards() {
       const transText = transDefs[0] || m.definitions[0] || '';
       const example = (m.examples || [])[0] || '';
       return `<div class="card-meaning-item">
-        <span class="card-pos">${m.partOfSpeech}</span>
+        <span class="card-pos ${m.partOfSpeech === 'phrase' ? 'card-pos-phrase' : ''}">${m.partOfSpeech === 'phrase' ? '구/표현' : m.partOfSpeech}</span>
         ${transText ? `<div class="card-translated">${transText}</div>` : ''}
         ${example ? `<div class="card-example">💬 ${example}</div>` : ''}
       </div>`;
@@ -642,7 +659,7 @@ function renderCards() {
             ${masteryStars ? `<span class="card-mastery">${masteryStars}</span>` : ''}
             ${reviewBadge}
             <div class="card-word">${w.word}</div>
-            <div class="card-phonetic">${w.phonetic}</div>
+            ${w.phonetic ? `<div class="card-phonetic">${w.phonetic}</div>` : '<div class="card-phonetic card-phrase-badge">💬 phrase</div>'}
             <span class="card-hint">${(UI_TEXT[lang] || UI_TEXT.ko).cardHint}</span>
             <button class="card-memo-btn" onclick="event.stopPropagation(); openMemoModal('${safeId}')" title="메모">${w.memo ? '📝' : '🖊️'}</button>
           </div>
@@ -651,7 +668,7 @@ function renderCards() {
               ${w.word}
               ${w.audioUrl ? `<button class="btn-audio" onclick="event.stopPropagation(); playAudio('${w.audioUrl}')" title="발음 듣기">🔊</button>` : ''}
             </div>
-            <div class="card-back-phonetic">${w.phonetic}</div>
+            ${w.phonetic ? `<div class="card-back-phonetic">${w.phonetic}</div>` : ''}
             <div class="card-meanings">${meaningsHtml}</div>
             ${synsHtml}${antsHtml}
             ${memoBack}

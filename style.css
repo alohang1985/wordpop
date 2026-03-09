@@ -880,6 +880,15 @@ body {
   font-weight: 700;
   margin-right: 6px;
 }
+.card-pos-phrase {
+  background: #fef3c7;
+  color: #d97706;
+}
+.card-phrase-badge {
+  font-size: 11px;
+  color: #d97706;
+  opacity: 0.8;
+}
 
 .btn-audio {
   background: var(--pink-light);
