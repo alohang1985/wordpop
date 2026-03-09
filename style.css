@@ -501,9 +501,12 @@ body {
 
 /* ============ Word Input Section ============ */
 .word-input-section {
-  padding: 30px 24px 10px;
-  max-width: 600px;
-  margin: 0 auto;
+  padding: 10px 24px;
+  background: var(--bg);
+  position: sticky;
+  top: 62px;
+  z-index: 90;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
 .input-wrapper {
@@ -513,6 +516,8 @@ body {
   padding: 8px;
   border-radius: 16px;
   box-shadow: var(--shadow);
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .input-wrapper input {
