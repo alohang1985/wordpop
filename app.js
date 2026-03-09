@@ -46,28 +46,14 @@ auth.onAuthStateChanged(async (user) => {
           showPage('pending-page');
         }
       } else {
-        // 첫 번째 유저는 자동으로 관리자 + 승인
-        const usersSnapshot = await db.collection('users').get();
-        const isFirstUser = usersSnapshot.empty;
-        const selectedLang = window._registerLang || 'ko';
-        await db.collection('users').doc(user.uid).set({
-          email: user.email,
-          displayName: user.displayName || user.email.split('@')[0],
-          language: selectedLang,
-          approved: isFirstUser,
-          role: isFirstUser ? 'admin' : 'user',
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        if (isFirstUser) {
-          currentUserData = { approved: true, role: 'admin', language: selectedLang, displayName: user.displayName || user.email.split('@')[0] };
-          document.getElementById('user-name').textContent = currentUserData.displayName;
-          document.getElementById('user-lang-badge').textContent = (LANG_CONFIG[selectedLang] || LANG_CONFIG.ko).flag;
-          document.getElementById('admin-btn').style.display = '';
-          applyUILanguage(selectedLang);
-          showPage('main-page');
-          loadUserWords();
+        // 신규 사용자 - 구글 로그인이면 언어 선택 모달 표시
+        const isGoogle = user.providerData.some(p => p.providerId === 'google.com');
+        if (isGoogle && !window._registerLang) {
+          // 구글 신규 사용자: 언어 선택 모달 표시
+          window._pendingNewUser = user;
+          document.getElementById('lang-modal').style.display = 'flex';
         } else {
-          showPage('pending-page');
+          await createNewUser(user, window._registerLang || 'ko');
         }
       }
     } catch (err) {
@@ -168,6 +154,59 @@ async function handleRegister() {
     console.error('Register error:', e.code, e.message);
     msg.textContent = getAuthErrorMessage(e.code);
     msg.className = 'auth-message error';
+  }
+}
+
+// 구글 신규 사용자 언어 선택 완료
+async function selectGoogleUserLang(lang) {
+  document.getElementById('lang-modal').style.display = 'none';
+  const user = window._pendingNewUser;
+  window._pendingNewUser = null;
+  if (user) {
+    await createNewUser(user, lang);
+  }
+}
+
+// 신규 사용자 Firestore 문서 생성 공통 함수
+async function createNewUser(user, selectedLang) {
+  const usersSnapshot = await db.collection('users').get();
+  const isFirstUser = usersSnapshot.empty;
+  await db.collection('users').doc(user.uid).set({
+    email: user.email,
+    displayName: user.displayName || user.email.split('@')[0],
+    language: selectedLang,
+    approved: isFirstUser,
+    role: isFirstUser ? 'admin' : 'user',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  if (isFirstUser) {
+    currentUserData = { approved: true, role: 'admin', language: selectedLang, displayName: user.displayName || user.email.split('@')[0] };
+    document.getElementById('user-name').textContent = currentUserData.displayName;
+    document.getElementById('user-lang-badge').textContent = (LANG_CONFIG[selectedLang] || LANG_CONFIG.ko).flag;
+    document.getElementById('admin-btn').style.display = '';
+    applyUILanguage(selectedLang);
+    showPage('main-page');
+    loadUserWords();
+  } else {
+    showPage('pending-page');
+  }
+}
+
+async function handleGoogleLogin() {
+  const msg = document.getElementById('auth-message');
+  try {
+    msg.textContent = '구글 로그인 중...';
+    msg.className = 'auth-message';
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+  } catch (e) {
+    console.error('Google login error:', e.code, e.message);
+    if (e.code === 'auth/popup-closed-by-user') {
+      msg.textContent = '';
+    } else {
+      msg.textContent = '구글 로그인에 실패했습니다. 다시 시도해주세요.';
+      msg.className = 'auth-message error';
+    }
   }
 }
 

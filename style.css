@@ -207,6 +207,124 @@ body {
   color: var(--mint);
 }
 
+/* ============ Google 버튼 + 구분선 ============ */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: var(--text-light);
+  font-size: 13px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.btn-google {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--radius-sm);
+  font-family: 'Nunito', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-google:hover {
+  border-color: #4285f4;
+  background: #f8f9ff;
+  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.2);
+}
+
+/* ============ 언어 선택 모달 ============ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-box {
+  background: var(--card-bg);
+  border-radius: 24px;
+  padding: 40px 32px;
+  text-align: center;
+  max-width: 340px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: modalPop 0.3s ease;
+}
+
+@keyframes modalPop {
+  from { transform: scale(0.85); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+.modal-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.modal-box h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+.modal-box h3 small {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.modal-lang-options {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.modal-lang-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 16px;
+  background: var(--bg);
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  transition: all 0.2s;
+}
+
+.modal-lang-btn:first-child:hover { border-color: var(--pink); background: var(--pink-light); }
+.modal-lang-btn:last-child:hover  { border-color: var(--blue); background: var(--blue-light); }
+
+.modal-flag {
+  font-size: 36px;
+}
+
 /* ============ Pending Page ============ */
 #pending-page {
   min-height: 100vh;
