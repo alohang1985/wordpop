@@ -353,12 +353,29 @@ async function fetchWordData(word) {
     }
   }
 
+  // 가장 적합한 정의 선택 (고어/희귀 제외, 예문 있는 것 우선)
+  function pickBestDef(defs) {
+    const archaic = /\barchaic\b|\bdated\b|\bobsolete\b|\bhistorical\b|\brare\b/i;
+    const good = defs.filter(d => d.definition && !archaic.test(d.definition));
+    const withExample = good.filter(d => d.example);
+    return withExample[0] || good[0] || defs[0];
+  }
+
+  // 동사 우선 정렬 (scrub처럼 동사가 주용도인 경우)
+  const posOrder = { verb: 0, noun: 1, adjective: 2, adverb: 3 };
+  const sortedMeanings = [...entry.meanings].sort((a, b) =>
+    (posOrder[a.partOfSpeech] ?? 4) - (posOrder[b.partOfSpeech] ?? 4)
+  );
+
   // 뜻 정리 (품사 최대 2개, 뜻 1개 + 예문 1개)
-  const meanings = entry.meanings.slice(0, 2).map(m => ({
-    partOfSpeech: m.partOfSpeech,
-    definitions: [m.definitions[0]?.definition].filter(Boolean),
-    examples: [m.definitions[0]?.example].filter(Boolean)
-  }));
+  const meanings = sortedMeanings.slice(0, 2).map(m => {
+    const best = pickBestDef(m.definitions);
+    return {
+      partOfSpeech: m.partOfSpeech,
+      definitions: [best?.definition].filter(Boolean),
+      examples: [best?.example].filter(Boolean)
+    };
+  });
 
   // 동의어 / 반의어
   const synonyms = [...new Set(
