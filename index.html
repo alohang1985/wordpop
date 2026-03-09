@@ -80,6 +80,19 @@
     </div>
   </div>
 
+  <!-- ============ 메모 모달 ============ -->
+  <div id="memo-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeMemoModal()">
+    <div class="modal-box memo-box">
+      <div class="modal-icon">📝</div>
+      <h3 id="memo-word-title" class="memo-word-title">단어</h3>
+      <textarea id="memo-textarea" class="memo-textarea" placeholder="이 단어에 대한 메모를 남겨보세요..." rows="4"></textarea>
+      <div class="memo-actions">
+        <button class="btn btn-secondary" onclick="closeMemoModal()">취소</button>
+        <button class="btn btn-primary" onclick="saveMemo()">저장</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ 언어 선택 모달 (구글 신규 사용자) ============ -->
   <div id="lang-modal" class="modal-overlay" style="display:none">
     <div class="modal-box">
@@ -183,18 +196,43 @@
       </div>
     </section>
 
+    <!-- 📅 학습 달력 -->
+    <section class="calendar-section">
+      <div class="calendar-title-row">
+        <span class="calendar-title">📅 학습 달력</span>
+        <span class="calendar-legend">
+          <span class="legend-box level-0"></span>
+          <span class="legend-box level-1"></span>
+          <span class="legend-box level-2"></span>
+          <span class="legend-box level-3"></span>
+          <span class="legend-box level-4"></span>
+        </span>
+      </div>
+      <div id="study-calendar" class="study-calendar"></div>
+    </section>
+
     <!-- 단어 카드 그리드 -->
     <section class="cards-section">
       <div class="cards-header">
         <h2 id="wordbook-title">나의 단어장</h2>
         <div class="cards-header-right">
+          <button class="btn btn-small btn-spelling" onclick="startSpellingQuiz()">✏️ 스펠링</button>
           <button class="btn btn-small btn-quiz" onclick="startQuiz()">🧩 퀴즈</button>
           <select id="sort-select" onchange="renderCards()">
-          <option value="recent" id="sort-recent">최근 추가순</option>
-          <option value="clicks" id="sort-clicks">많이 본 순</option>
-          <option value="alpha" id="sort-alpha">알파벳순</option>
-        </select>
+            <option value="recent" id="sort-recent">최근 추가순</option>
+            <option value="clicks" id="sort-clicks">많이 본 순</option>
+            <option value="alpha" id="sort-alpha">알파벳순</option>
+          </select>
         </div>
+      </div>
+      <!-- 검색 바 -->
+      <div class="search-wrap">
+        <input type="text" id="search-input" placeholder="🔍 단어 검색..." oninput="filterCards()" autocomplete="off">
+      </div>
+      <!-- 복습 필요 알림 -->
+      <div id="review-notice" class="review-notice" style="display:none">
+        <span>🔴 <span id="review-count">0</span>개 복습 필요</span>
+        <button class="btn-review-filter" onclick="filterReview()">복습만 보기</button>
       </div>
       <div id="cards-grid" class="cards-grid">
         <div class="empty-state">

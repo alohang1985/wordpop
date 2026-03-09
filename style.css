@@ -1364,3 +1364,198 @@ body {
   .goal-section   { margin: 0 12px 12px; }
   .streak-wrap    { display: none; }
 }
+
+/* ============ ✏️ 스펠링 버튼 ============ */
+.btn-spelling {
+  background: linear-gradient(135deg, var(--yellow), var(--orange));
+  color: white;
+  border: none;
+  font-weight: 700;
+}
+.btn-spelling:hover { opacity: 0.85; }
+
+/* ============ 🔍 단어 검색 ============ */
+.search-wrap {
+  margin-bottom: 12px;
+}
+.search-wrap input {
+  width: 100%;
+  padding: 10px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+  background: white;
+}
+.search-wrap input:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px var(--purple-light);
+}
+
+/* ============ 🔴 복습 필요 알림 ============ */
+.review-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff1f2;
+  border: 1.5px solid #fecdd3;
+  border-radius: 10px;
+  padding: 8px 14px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #be123c;
+}
+.btn-review-filter {
+  background: #fecdd3;
+  color: #be123c;
+  border: none;
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.btn-review-filter:hover,
+.btn-review-filter.active {
+  background: #e11d48;
+  color: white;
+}
+.card-review-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #be123c;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  padding: 2px 6px;
+}
+
+/* ============ 📅 학습 달력 ============ */
+.calendar-section {
+  margin: 0 20px 16px;
+  background: white;
+  border: 2px solid #dbeafe;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.calendar-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.calendar-legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.legend-box {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+.legend-box.level-0 { background: #f3f4f6; }
+.legend-box.level-1 { background: #bbf7d0; }
+.legend-box.level-2 { background: #4ade80; }
+.legend-box.level-3 { background: #16a34a; }
+.legend-box.level-4 { background: #166534; }
+.study-calendar {
+  display: grid;
+  grid-template-columns: repeat(35, 1fr);
+  gap: 3px;
+}
+.cal-cell {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  transition: transform 0.15s;
+  cursor: default;
+}
+.cal-cell:hover { transform: scale(1.4); }
+.cal-cell.level-0 { background: #f3f4f6; }
+.cal-cell.level-1 { background: #bbf7d0; }
+.cal-cell.level-2 { background: #4ade80; }
+.cal-cell.level-3 { background: #16a34a; }
+.cal-cell.level-4 { background: #166534; }
+.cal-today {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}
+@media (max-width: 640px) {
+  .calendar-section { margin: 0 12px 12px; }
+  .study-calendar { gap: 2px; }
+}
+
+/* ============ 📝 메모 버튼 & 내용 ============ */
+.card-memo-btn {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.3;
+  transition: opacity 0.2s, transform 0.2s;
+  padding: 2px;
+  line-height: 1;
+}
+.flip-card:hover .card-memo-btn { opacity: 0.7; }
+.card-memo-btn:hover { transform: scale(1.2); opacity: 1; }
+.card-memo {
+  font-size: 11px;
+  color: #7c3aed;
+  background: rgba(192, 132, 252, 0.1);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-top: 4px;
+  font-style: italic;
+  line-height: 1.4;
+  max-height: 44px;
+  overflow: hidden;
+}
+
+/* ============ 📝 메모 모달 ============ */
+.memo-box {
+  max-width: 420px;
+}
+.memo-word-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--purple);
+  margin-bottom: 4px;
+}
+.memo-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  min-height: 100px;
+  line-height: 1.5;
+}
+.memo-textarea:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px var(--purple-light);
+}
+.memo-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}

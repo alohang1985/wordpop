@@ -21,6 +21,10 @@ let currentUser = null;
 let currentUserData = null;
 let userWords = [];
 let audioCache = {};
+let searchQuery = '';
+let currentMemoWordId = null;
+let quizMode = 'meaning';
+let showReviewOnly = false;
 
 // ============================================================
 // 인증 상태 감시
@@ -81,6 +85,9 @@ function showPage(pageId) {
 
   if (pageId === 'admin-page') {
     loadAdminData();
+  }
+  if (pageId === 'main-page') {
+    renderCalendar();
   }
 }
 
@@ -482,27 +489,66 @@ const CARD_COLORS = ['card-color-1', 'card-color-2', 'card-color-3', 'card-color
 function renderCards() {
   const grid = document.getElementById('cards-grid');
   const sort = document.getElementById('sort-select').value;
+  const search = searchQuery.trim().toLowerCase();
+  const now = Date.now();
+  const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+
+  // 복습 필요 단어 수 계산
+  const reviewCount = userWords.filter(w => {
+    const t = w.createdAt?.toDate?.()?.getTime() || new Date(w.createdAt || 0).getTime();
+    return w.clickCount < 3 && (now - t) > threeDaysMs;
+  }).length;
+
+  const reviewNotice = document.getElementById('review-notice');
+  const reviewCountEl = document.getElementById('review-count');
+  if (reviewNotice) {
+    reviewNotice.style.display = reviewCount > 0 ? '' : 'none';
+    if (reviewCountEl) reviewCountEl.textContent = reviewCount;
+  }
 
   let sorted = [...userWords];
+
+  // 검색 필터
+  if (search) {
+    sorted = sorted.filter(w =>
+      w.word.toLowerCase().includes(search) ||
+      (w.translatedMeanings || []).some(m =>
+        m.definitions.some(d => d.toLowerCase().includes(search))
+      )
+    );
+  }
+
+  // 복습 필터
+  if (showReviewOnly) {
+    sorted = sorted.filter(w => {
+      const t = w.createdAt?.toDate?.()?.getTime() || new Date(w.createdAt || 0).getTime();
+      return w.clickCount < 3 && (now - t) > threeDaysMs;
+    });
+  }
+
+  // 정렬
   if (sort === 'clicks') sorted.sort((a, b) => b.clickCount - a.clickCount);
   else if (sort === 'alpha') sorted.sort((a, b) => a.word.localeCompare(b.word));
-  // 'recent'은 이미 최신순
 
   if (sorted.length === 0) {
     const t = UI_TEXT[getUserLang()] || UI_TEXT.ko;
     grid.innerHTML = `
       <div class="empty-state">
         <span class="empty-icon">🔍</span>
-        <p>${t.emptyState}</p>
+        <p>${search || showReviewOnly ? '검색 결과가 없어요!' : t.emptyState}</p>
       </div>`;
     return;
   }
+
+  const lang = getUserLang();
 
   grid.innerHTML = sorted.map((w, i) => {
     const colorClass = CARD_COLORS[i % CARD_COLORS.length];
     const hasTrans = w.translatedMeanings && w.translatedMeanings.length > 0;
 
-    const lang = getUserLang();
+    const createdTime = w.createdAt?.toDate?.()?.getTime() || new Date(w.createdAt || 0).getTime();
+    const needsReview = w.clickCount < 3 && (now - createdTime) > threeDaysMs;
+
     const meaningsHtml = w.meanings.map((m, mi) => {
       const transDefs = hasTrans && w.translatedMeanings[mi]
         ? w.translatedMeanings[mi].definitions : [];
@@ -527,15 +573,21 @@ function renderCards() {
     const masteryLevel = w.clickCount >= 20 ? 3 : w.clickCount >= 10 ? 2 : w.clickCount >= 3 ? 1 : 0;
     const masteryStars = ['', '⭐', '⭐⭐', '⭐⭐⭐'][masteryLevel];
 
+    const reviewBadge = needsReview ? `<span class="card-review-badge">🔴 복습</span>` : '';
+    const memoBack = w.memo ? `<div class="card-memo">📝 ${w.memo}</div>` : '';
+    const safeId = w.id.replace(/'/g, "\\'");
+
     return `
-      <div class="flip-card ${colorClass}" id="card-${w.id}" onclick="flipCard('${w.id}')">
+      <div class="flip-card ${colorClass}" id="card-${w.id}" onclick="flipCard('${safeId}')">
         <div class="flip-card-inner">
           <div class="flip-card-front">
             <span class="card-click-badge">👀 ${w.clickCount}</span>
             ${masteryStars ? `<span class="card-mastery">${masteryStars}</span>` : ''}
+            ${reviewBadge}
             <div class="card-word">${w.word}</div>
             <div class="card-phonetic">${w.phonetic}</div>
             <span class="card-hint">${(UI_TEXT[lang] || UI_TEXT.ko).cardHint}</span>
+            <button class="card-memo-btn" onclick="event.stopPropagation(); openMemoModal('${safeId}')" title="메모">${w.memo ? '📝' : '🖊️'}</button>
           </div>
           <div class="flip-card-back">
             <div class="card-back-word">
@@ -545,10 +597,74 @@ function renderCards() {
             <div class="card-back-phonetic">${w.phonetic}</div>
             <div class="card-meanings">${meaningsHtml}</div>
             ${synsHtml}${antsHtml}
-            <button class="card-delete-btn" onclick="event.stopPropagation(); deleteWord('${w.id}')" title="삭제">✕</button>
+            ${memoBack}
+            <button class="card-delete-btn" onclick="event.stopPropagation(); deleteWord('${safeId}')" title="삭제">✕</button>
           </div>
         </div>
       </div>`;
+  }).join('');
+}
+
+// ============================================================
+// 🔍 단어 검색
+// ============================================================
+function filterCards() {
+  searchQuery = document.getElementById('search-input')?.value || '';
+  renderCards();
+}
+
+// ============================================================
+// 🔴 복습 필터
+// ============================================================
+function filterReview() {
+  showReviewOnly = !showReviewOnly;
+  const btn = document.querySelector('.btn-review-filter');
+  if (btn) {
+    btn.textContent = showReviewOnly
+      ? (getUserLang() === 'vi' ? 'Xem tất cả' : '전체 보기')
+      : (getUserLang() === 'vi' ? 'Chỉ từ cần ôn' : '복습만 보기');
+    btn.classList.toggle('active', showReviewOnly);
+  }
+  renderCards();
+}
+
+// ============================================================
+// 📅 학습 달력
+// ============================================================
+async function renderCalendar() {
+  const calendarEl = document.getElementById('study-calendar');
+  if (!calendarEl || !currentUser) return;
+
+  const today = new Date();
+  const days = [];
+  for (let i = 34; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().split('T')[0]);
+  }
+
+  const activityMap = {};
+  try {
+    const snapshot = await db.collection('dailyActivity')
+      .where('userId', '==', currentUser.uid)
+      .get();
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.date && days.includes(data.date)) {
+        activityMap[data.date] = data.clicks || 0;
+      }
+    });
+  } catch (e) {
+    console.error('Calendar load error:', e);
+  }
+
+  const todayStr = today.toISOString().split('T')[0];
+  calendarEl.innerHTML = days.map(day => {
+    const clicks = activityMap[day] || 0;
+    const level = clicks >= 20 ? 4 : clicks >= 10 ? 3 : clicks >= 5 ? 2 : clicks >= 1 ? 1 : 0;
+    const isToday = day === todayStr ? ' cal-today' : '';
+    const shortDate = day.slice(5);
+    return `<div class="cal-cell level-${level}${isToday}" title="${shortDate}: ${clicks}번 학습"></div>`;
   }).join('');
 }
 
@@ -647,6 +763,44 @@ async function deleteWord(wordId) {
 }
 
 // ============================================================
+// 📝 메모
+// ============================================================
+function openMemoModal(wordId) {
+  currentMemoWordId = wordId;
+  const word = userWords.find(w => w.id === wordId);
+  if (!word) return;
+  const lang = getUserLang();
+  document.getElementById('memo-word-title').textContent = word.word;
+  document.getElementById('memo-textarea').value = word.memo || '';
+  document.getElementById('memo-textarea').placeholder =
+    lang === 'vi' ? 'Viết ghi chú về từ này...' : '이 단어에 대한 메모를 남겨보세요...';
+  document.getElementById('memo-modal').style.display = 'flex';
+}
+
+function closeMemoModal() {
+  document.getElementById('memo-modal').style.display = 'none';
+  currentMemoWordId = null;
+}
+
+async function saveMemo() {
+  if (!currentMemoWordId) return;
+  const memo = document.getElementById('memo-textarea').value.trim();
+  const lang = getUserLang();
+  try {
+    await db.collection('userWords').doc(currentMemoWordId).update({ memo });
+    const wordIndex = userWords.findIndex(w => w.id === currentMemoWordId);
+    if (wordIndex !== -1) userWords[wordIndex].memo = memo;
+    closeMemoModal();
+    renderCards();
+    showToast(memo
+      ? (lang === 'vi' ? '메모가 저장됐어요! 📝' : '메모가 저장됐어요! 📝')
+      : (lang === 'vi' ? '메모가 삭제됐어요!' : '메모가 삭제됐어요!'));
+  } catch (e) {
+    showToast(lang === 'vi' ? '메모 저장 중 오류!' : '메모 저장 중 오류가 발생했어요.');
+  }
+}
+
+// ============================================================
 // 유저 단어 로드
 // ============================================================
 async function loadUserWords() {
@@ -667,6 +821,7 @@ async function loadUserWords() {
 
     renderCards();
     updateMyStats();
+    renderCalendar();
   } catch (e) {
     console.error('단어 로드 실패:', e);
     showToast('단어를 불러오는 중 오류가 발생했어요. 새로고침해 주세요.');
@@ -681,12 +836,8 @@ function updateMyStats() {
   const totalClicks = userWords.reduce((sum, w) => sum + (w.clickCount || 0), 0);
   document.getElementById('my-click-count').textContent = totalClicks;
 
-  // 오늘 학습량 (오늘 클릭한 카드 수 - 간단히 dailyActivity에서 가져오기)
   const today = new Date().toISOString().split('T')[0];
   db.collection('dailyActivity').doc(`${currentUser.uid}_${today}`).get()
-    .then(doc => {
-      document.getElementById('my-today-count').textContent = doc.exists ? doc.data().clicks : 0;
-    })
     .then(doc => {
       const clicks = doc.exists ? doc.data().clicks : 0;
       document.getElementById('my-today-count').textContent = clicks;
@@ -694,6 +845,7 @@ function updateMyStats() {
     })
     .catch(() => {
       document.getElementById('my-today-count').textContent = 0;
+      updateDailyGoal(0);
     });
 
   updateGarden();
@@ -999,11 +1151,56 @@ function startQuiz() {
     showToast(lang === 'vi' ? 'Cần ít nhất 4 từ để làm quiz!' : '단어가 4개 이상 있어야 퀴즈를 할 수 있어요!');
     return;
   }
+  quizMode = 'meaning';
   quizWords = [...userWords].sort(() => Math.random() - 0.5).slice(0, Math.min(10, userWords.length));
   quizIdx = 0;
   quizScore = 0;
   showPage('quiz-page');
   renderQuizQuestion();
+}
+
+// ============================================================
+// ✏️ 스펠링 퀴즈
+// ============================================================
+function startSpellingQuiz() {
+  const lang = getUserLang();
+  if (userWords.length < 1) {
+    showToast(lang === 'vi' ? 'Cần ít nhất 1 từ!' : '단어가 1개 이상 있어야 스펠링 퀴즈를 할 수 있어요!');
+    return;
+  }
+  quizMode = 'spelling';
+  quizWords = [...userWords].sort(() => Math.random() - 0.5).slice(0, Math.min(10, userWords.length));
+  quizIdx = 0;
+  quizScore = 0;
+  showPage('quiz-page');
+  renderQuizQuestion();
+}
+
+function generateWrongSpellings(word) {
+  const w = word.toLowerCase();
+  const wrongs = new Set();
+
+  // 방법 1: 인접한 두 글자 교환
+  for (let i = 0; i < w.length - 1 && wrongs.size < 5; i++) {
+    const arr = w.split('');
+    [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+    const wrong = arr.join('');
+    if (wrong !== w) wrongs.add(wrong);
+  }
+
+  // 방법 2: 글자 중복
+  for (let i = 0; i < w.length && wrongs.size < 5; i++) {
+    const wrong = w.slice(0, i + 1) + w[i] + w.slice(i + 1);
+    if (wrong !== w) wrongs.add(wrong);
+  }
+
+  // 방법 3: 글자 삭제
+  for (let i = 0; i < w.length && wrongs.size < 5; i++) {
+    const wrong = w.slice(0, i) + w.slice(i + 1);
+    if (wrong !== w && wrong.length >= 2) wrongs.add(wrong);
+  }
+
+  return [...wrongs].slice(0, 3);
 }
 
 function renderQuizQuestion() {
@@ -1012,15 +1209,57 @@ function renderQuizQuestion() {
   document.getElementById('quiz-progress').textContent = `${quizIdx + 1} / ${quizWords.length}`;
   document.getElementById('quiz-score').textContent    = lang === 'vi' ? `Điểm: ${quizScore}` : `점수: ${quizScore}`;
 
-  const meanings = w.translatedMeanings || w.meanings;
-  const def = meanings?.[0]?.definitions?.[0] || w.meanings?.[0]?.definitions?.[0] || '';
-  document.getElementById('quiz-question').textContent = def;
+  const labelEl = document.querySelector('.quiz-question-label');
 
-  const others  = userWords.filter(u => u.id !== w.id).sort(() => Math.random() - 0.5).slice(0, 3);
-  const options = [w, ...others].sort(() => Math.random() - 0.5);
-  document.getElementById('quiz-options').innerHTML = options.map(o =>
-    `<button class="quiz-btn" data-id="${o.id}" onclick="answerQuiz(this,'${w.id}')">${o.word}</button>`
-  ).join('');
+  if (quizMode === 'spelling') {
+    // 스펠링 퀴즈: 뜻 보고 올바른 스펠링 고르기
+    if (labelEl) labelEl.textContent = lang === 'vi' ? '올바른 스펠링을 골라보세요!' : '올바른 스펠링을 골라보세요!';
+
+    const meanings = w.translatedMeanings || w.meanings;
+    const def = meanings?.[0]?.definitions?.[0] || w.meanings?.[0]?.definitions?.[0] || '';
+    document.getElementById('quiz-question').textContent = def;
+
+    const wrongSpellings = generateWrongSpellings(w.word);
+    // 틀린 스펠링이 3개 미만이면 다른 단어의 스펠링으로 채우기
+    const otherWords = userWords.filter(u => u.id !== w.id).map(u => u.word);
+    while (wrongSpellings.length < 3 && otherWords.length > 0) {
+      wrongSpellings.push(otherWords.splice(Math.floor(Math.random() * otherWords.length), 1)[0]);
+    }
+    const options = [w.word, ...wrongSpellings.slice(0, 3)].sort(() => Math.random() - 0.5);
+    document.getElementById('quiz-options').innerHTML = options.map(spelling =>
+      `<button class="quiz-btn" data-spelling="${spelling}" onclick="answerSpellingQuiz(this,'${w.word}')">${spelling}</button>`
+    ).join('');
+  } else {
+    // 일반 퀴즈: 뜻 보고 단어 고르기
+    if (labelEl) labelEl.textContent = lang === 'vi' ? 'Nhìn nghĩa, chọn từ đúng!' : '뜻을 보고 단어를 골라보세요!';
+
+    const meanings = w.translatedMeanings || w.meanings;
+    const def = meanings?.[0]?.definitions?.[0] || w.meanings?.[0]?.definitions?.[0] || '';
+    document.getElementById('quiz-question').textContent = def;
+
+    const others  = userWords.filter(u => u.id !== w.id).sort(() => Math.random() - 0.5).slice(0, 3);
+    const options = [w, ...others].sort(() => Math.random() - 0.5);
+    document.getElementById('quiz-options').innerHTML = options.map(o =>
+      `<button class="quiz-btn" data-id="${o.id}" onclick="answerQuiz(this,'${w.id}')">${o.word}</button>`
+    ).join('');
+  }
+}
+
+function answerSpellingQuiz(btn, correctSpelling) {
+  const isCorrect = btn.dataset.spelling === correctSpelling;
+  if (isCorrect) quizScore++;
+
+  document.querySelectorAll('.quiz-btn').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.spelling === correctSpelling) b.classList.add('quiz-correct');
+    else if (b === btn && !isCorrect) b.classList.add('quiz-wrong');
+  });
+
+  setTimeout(() => {
+    quizIdx++;
+    if (quizIdx < quizWords.length) renderQuizQuestion();
+    else showQuizResult();
+  }, 900);
 }
 
 function answerQuiz(btn, correctId) {
