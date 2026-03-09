@@ -1175,93 +1175,128 @@ body {
 }
 .btn-quiz:hover { opacity: 0.85; }
 
-/* ============ 🌱 화분 정원 ============ */
-.garden-section {
+/* ============ 📊 컴팩트 위젯 바 ============ */
+.widget-bar {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-  border: 2px solid #bbf7d0;
+  align-items: stretch;
+  background: var(--card-bg);
   border-radius: var(--radius);
-  padding: 16px 20px;
-  margin: 0 20px 16px;
+  box-shadow: var(--shadow);
+  margin: 8px 20px 12px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
 }
-.garden-pot-wrap {
-  flex-shrink: 0;
-  width: 64px;
-  height: 64px;
-  background: white;
-  border-radius: 50%;
+
+.widget-garden {
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-  font-size: 32px;
+  gap: 10px;
+  padding: 10px 14px;
+  flex: 1.5;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  min-width: 0;
 }
-.garden-info { flex: 1; min-width: 0; }
-.garden-top-row {
+
+.mini-plant {
+  font-size: 26px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.widget-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.widget-top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
+  gap: 4px;
 }
-.garden-label {
-  font-size: 15px;
+
+.widget-label-green {
+  font-size: 11px;
   font-weight: 800;
   color: #166534;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.garden-total {
-  font-size: 12px;
-  font-weight: 600;
+
+.widget-count-green {
+  font-size: 10px;
+  font-weight: 700;
   color: #16a34a;
   background: #dcfce7;
-  padding: 2px 8px;
-  border-radius: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.garden-bar-outer {
-  height: 8px;
+
+.mini-progress-outer {
+  height: 5px;
   background: #d1fae5;
   border-radius: 10px;
   overflow: hidden;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
 }
-.garden-bar-inner {
+
+.mini-progress-outer-purple {
+  background: var(--purple-light);
+}
+
+.mini-progress-inner {
   height: 100%;
-  background: linear-gradient(90deg, #34d399, #059669);
   border-radius: 10px;
   transition: width 0.6s ease;
   width: 0%;
 }
-.garden-hint {
-  font-size: 12px;
-  color: #4ade80;
-  font-weight: 600;
+
+.mini-progress-green {
+  background: linear-gradient(90deg, #34d399, #059669);
 }
 
-/* ============ 🎯 오늘의 목표 ============ */
-.goal-section {
-  margin: 0 20px 16px;
-  background: white;
-  border: 2px solid #e9d5ff;
-  border-radius: var(--radius);
-  padding: 12px 16px;
+.widget-hint-text {
+  font-size: 10px;
+  color: #4ade80;
+  font-weight: 600;
+  display: block;
 }
-.goal-header {
+
+.widget-sep {
+  width: 1px;
+  background: #e5e7eb;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.widget-goal {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: 13px;
-  font-weight: 700;
+  gap: 8px;
+  padding: 10px 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.widget-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.widget-label-purple {
+  font-size: 11px;
+  font-weight: 800;
   color: var(--text);
-  margin-bottom: 8px;
+  white-space: nowrap;
 }
-.goal-text { color: var(--purple); font-weight: 800; }
-.goal-bar-outer {
-  height: 10px;
-  background: var(--purple-light);
-  border-radius: 10px;
-  overflow: hidden;
-}
+
+.goal-text { color: var(--purple); font-weight: 800; font-size: 11px; flex-shrink: 0; }
+
 .goal-bar-inner {
   height: 100%;
   background: linear-gradient(90deg, var(--purple), var(--pink));
@@ -1269,8 +1304,46 @@ body {
   transition: width 0.5s ease;
   width: 0%;
 }
+
 .goal-done .goal-bar-inner { background: linear-gradient(90deg, var(--mint), #059669); }
 .goal-done .goal-text { color: var(--mint); }
+
+.widget-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  flex-shrink: 0;
+}
+
+.mini-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.mini-stat-num {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+
+.mini-stat-label {
+  font-size: 10px;
+  color: var(--text-light);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+@media (max-width: 640px) {
+  .widget-bar { margin: 8px 12px 10px; flex-wrap: wrap; }
+  .widget-garden { flex: 1 1 60%; }
+  .widget-goal { flex: 1 1 30%; }
+  .widget-stats { width: 100%; justify-content: space-around; border-top: 1px solid #e5e7eb; padding: 8px; }
+  .widget-sep:last-of-type { display: none; }
+}
 
 /* ============ 🧩 퀴즈 페이지 ============ */
 .quiz-container {
@@ -1361,8 +1434,6 @@ body {
 
 @media (max-width: 640px) {
   .quiz-options { grid-template-columns: 1fr; }
-  .garden-section { margin: 0 12px 12px; }
-  .goal-section   { margin: 0 12px 12px; }
   .streak-wrap    { display: none; }
 }
 
@@ -1441,21 +1512,38 @@ body {
 
 /* ============ 📅 학습 달력 ============ */
 .calendar-section {
-  margin: 0 20px 16px;
+  margin: 0 20px 12px;
   background: white;
-  border: 2px solid #dbeafe;
+  border: 1px solid #dbeafe;
   border-radius: var(--radius);
-  padding: 14px 16px;
+  padding: 8px 14px;
 }
 .calendar-title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  font-size: 13px;
+  margin-bottom: 0;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text);
 }
+.calendar-toggle-row {
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 0;
+}
+.calendar-toggle-row:hover .calendar-title { color: #3b82f6; }
+.cal-title-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cal-toggle-icon {
+  font-size: 10px;
+  color: var(--text-light);
+  font-weight: 600;
+}
+#calendar-body { margin-top: 8px; }
 .calendar-legend {
   display: flex;
   align-items: center;
@@ -1494,7 +1582,7 @@ body {
   outline-offset: 1px;
 }
 @media (max-width: 640px) {
-  .calendar-section { margin: 0 12px 12px; }
+  .calendar-section { margin: 0 12px 10px; }
   .study-calendar { gap: 2px; }
 }
 

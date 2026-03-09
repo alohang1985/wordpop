@@ -622,6 +622,18 @@ function filterReview() {
 }
 
 // ============================================================
+// 📅 학습 달력 토글
+// ============================================================
+function toggleCalendar() {
+  const body = document.getElementById('calendar-body');
+  const icon = document.getElementById('cal-toggle-icon');
+  if (!body) return;
+  const isHidden = body.style.display === 'none';
+  body.style.display = isHidden ? 'block' : 'none';
+  icon.textContent = isHidden ? '▲ 접기' : '▼ 펼치기';
+}
+
+// ============================================================
 // 📅 학습 달력
 // ============================================================
 async function renderCalendar() {

@@ -150,66 +150,77 @@
       <p id="input-message" class="input-message"></p>
     </section>
 
-    <!-- 내 학습 통계 -->
-    <section class="my-stats">
-      <div class="stat-bubble">
-        <span class="stat-number" id="my-word-count">0</span>
-        <span class="stat-label" id="label-word-count">등록 단어</span>
+    <!-- 📊 컴팩트 대시보드 위젯 바 -->
+    <section class="widget-bar">
+      <!-- 🌱 정원 위젯 -->
+      <div class="widget-garden">
+        <div id="garden-plant" class="mini-plant">🪨</div>
+        <div class="widget-content">
+          <div class="widget-top-row">
+            <span id="garden-label" class="widget-label-green">텅빈 화분</span>
+            <span id="garden-total-clicks" class="widget-count-green">총 0번</span>
+          </div>
+          <div class="mini-progress-outer">
+            <div id="garden-progress" class="mini-progress-inner mini-progress-green"></div>
+          </div>
+          <span id="garden-hint" class="widget-hint-text"></span>
+          <span id="garden-graduated" class="garden-graduated"></span>
+        </div>
       </div>
-      <div class="stat-bubble">
-        <span class="stat-number" id="my-click-count">0</span>
-        <span class="stat-label" id="label-total-clicks">총 클릭</span>
+
+      <div class="widget-sep"></div>
+
+      <!-- 🎯 목표 위젯 -->
+      <div class="widget-goal" id="goal-bar-wrap">
+        <span class="widget-icon">🎯</span>
+        <div class="widget-content">
+          <div class="widget-top-row">
+            <span class="widget-label-purple">오늘의 목표</span>
+            <span id="goal-text" class="goal-text">0 / 10</span>
+          </div>
+          <div class="mini-progress-outer mini-progress-outer-purple">
+            <div id="goal-progress" class="mini-progress-inner goal-bar-inner"></div>
+          </div>
+        </div>
       </div>
-      <div class="stat-bubble">
-        <span class="stat-number" id="my-today-count">0</span>
-        <span class="stat-label" id="label-today">오늘 학습</span>
+
+      <div class="widget-sep"></div>
+
+      <!-- 📈 통계 위젯 -->
+      <div class="widget-stats">
+        <div class="mini-stat">
+          <span id="my-word-count" class="mini-stat-num">0</span>
+          <span id="label-word-count" class="mini-stat-label">등록</span>
+        </div>
+        <div class="mini-stat">
+          <span id="my-click-count" class="mini-stat-num">0</span>
+          <span id="label-total-clicks" class="mini-stat-label">클릭</span>
+        </div>
+        <div class="mini-stat">
+          <span id="my-today-count" class="mini-stat-num">0</span>
+          <span id="label-today" class="mini-stat-label">오늘</span>
+        </div>
       </div>
     </section>
 
-    <!-- 🌱 나의 정원 -->
-    <section class="garden-section">
-      <div class="garden-pot-wrap">
-        <div id="garden-plant" class="garden-plant">🪨</div>
-      </div>
-      <div class="garden-info">
-        <div class="garden-top-row">
-          <span id="garden-label" class="garden-label">텅빈 화분</span>
-          <span id="garden-total-clicks" class="garden-total">총 0번</span>
-        </div>
-        <div class="garden-bar-outer">
-          <div class="garden-bar-inner" id="garden-progress"></div>
-        </div>
-        <span id="garden-hint" class="garden-hint">1번만 공부하면 씨앗이 돼요!</span>
-        <span id="garden-graduated" class="garden-graduated"></span>
-      </div>
-    </section>
-
-    <!-- 🎯 오늘의 목표 -->
-    <section class="goal-section">
-      <div class="goal-header">
-        <span>🎯 오늘의 목표</span>
-        <span id="goal-text" class="goal-text">0 / 10</span>
-      </div>
-      <div id="goal-bar-wrap" class="goal-bar-wrap">
-        <div class="goal-bar-outer">
-          <div id="goal-progress" class="goal-bar-inner"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 📅 학습 달력 -->
+    <!-- 📅 학습 달력 (접기/펼치기) -->
     <section class="calendar-section">
-      <div class="calendar-title-row">
+      <div class="calendar-title-row calendar-toggle-row" onclick="toggleCalendar()">
         <span class="calendar-title">📅 학습 달력</span>
-        <span class="calendar-legend">
-          <span class="legend-box level-0"></span>
-          <span class="legend-box level-1"></span>
-          <span class="legend-box level-2"></span>
-          <span class="legend-box level-3"></span>
-          <span class="legend-box level-4"></span>
-        </span>
+        <div class="cal-title-right">
+          <span class="calendar-legend">
+            <span class="legend-box level-0"></span>
+            <span class="legend-box level-1"></span>
+            <span class="legend-box level-2"></span>
+            <span class="legend-box level-3"></span>
+            <span class="legend-box level-4"></span>
+          </span>
+          <span id="cal-toggle-icon" class="cal-toggle-icon">▼ 펼치기</span>
+        </div>
       </div>
-      <div id="study-calendar" class="study-calendar"></div>
+      <div id="calendar-body" style="display:none">
+        <div id="study-calendar" class="study-calendar"></div>
+      </div>
     </section>
 
     <!-- 단어 카드 그리드 -->
