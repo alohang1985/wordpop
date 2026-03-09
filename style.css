@@ -752,50 +752,147 @@ body {
   margin-bottom: 12px;
 }
 
-/* ============ Flip Card ============ */
-.flip-card {
-  perspective: 1000px;
-  height: 220px;
-  cursor: pointer;
-}
-
-.flip-card-inner {
+/* ============ Word Card (simplified — click opens modal) ============ */
+.word-card {
   position: relative;
-  width: 100%;
-  height: 100%;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  transform-style: preserve-3d;
-}
-
-.flip-card.flipped .flip-card-inner {
-  transform: rotateY(180deg);
-}
-
-.flip-card-front,
-.flip-card-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
+  height: 160px;
+  cursor: pointer;
   border-radius: var(--radius);
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
   padding: 20px;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.flip-card:hover .flip-card-front,
-.flip-card:hover .flip-card-back {
-  box-shadow: var(--shadow-hover);
-}
-
-.flip-card-front {
-  background: var(--card-bg);
   align-items: center;
   justify-content: center;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  overflow: hidden;
+}
+.word-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-hover);
+}
+.word-card:active { transform: scale(0.97); }
+
+.card-color-1.word-card { border-top: 4px solid var(--pink); }
+.card-color-2.word-card { border-top: 4px solid var(--purple); }
+.card-color-3.word-card { border-top: 4px solid var(--blue); }
+.card-color-4.word-card { border-top: 4px solid var(--mint); }
+.card-color-5.word-card { border-top: 4px solid var(--yellow); }
+.card-color-6.word-card { border-top: 4px solid var(--orange); }
+
+.card-has-memo {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  font-size: 13px;
 }
 
+/* ── 단어 상세 모달 ── */
+.word-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 998;
+  padding: 16px;
+}
+.word-modal-box {
+  background: var(--card-bg);
+  border-radius: 24px;
+  padding: 28px 28px 24px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+  position: relative;
+  animation: wordSpin 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes wordSpin {
+  from { transform: perspective(900px) rotateY(-70deg) scale(0.75); opacity: 0; }
+  to   { transform: perspective(900px) rotateY(0deg)   scale(1);    opacity: 1; }
+}
+.word-modal-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+.wm-btn {
+  border: none;
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.wm-close  { background: rgba(0,0,0,0.06); }
+.wm-close:hover  { background: #fecaca; }
+.wm-refresh { background: rgba(99,102,241,0.1); }
+.wm-refresh:hover { background: #c7d2fe; }
+.wm-memo { background: rgba(251,191,36,0.15); }
+.wm-memo:hover { background: #fde68a; }
+.wm-delete { background: rgba(239,68,68,0.08); }
+.wm-delete:hover { background: #fecaca; color: #ef4444; }
+
+/* 모달 내부 */
+.wm-header { text-align: center; margin-bottom: 20px; }
+.wm-word {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.wm-phonetic {
+  font-size: 16px;
+  color: var(--text-light);
+  margin-top: 4px;
+  font-weight: 600;
+}
+.wm-meanings { display: flex; flex-direction: column; gap: 14px; margin-bottom: 14px; }
+.wm-meaning {}
+.wm-translated {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 6px 0 4px;
+  line-height: 1.4;
+}
+.wm-example {
+  font-size: 13px;
+  color: var(--text-light);
+  font-style: italic;
+  line-height: 1.5;
+}
+.wm-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.wm-chip-label { font-weight: 800; color: var(--text-light); font-size: 14px; }
+.wm-memo {
+  background: var(--yellow-light);
+  color: #92400e;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+/* 기존 flip-card CSS — 더 이상 새 카드에서 사용 안하지만 호환용 유지 */
+.flip-card { perspective: 1000px; height: 220px; cursor: pointer; }
+.flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+.flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+.flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; box-shadow: var(--shadow); overflow: hidden; }
+.flip-card-front { background: var(--card-bg); align-items: center; justify-content: center; }
+.flip-card-back { background: linear-gradient(135deg, #fdf2f8, #ede9fe); transform: rotateY(180deg); }
 .card-color-1 .flip-card-front { border-top: 4px solid var(--pink); }
 .card-color-2 .flip-card-front { border-top: 4px solid var(--purple); }
 .card-color-3 .flip-card-front { border-top: 4px solid var(--blue); }

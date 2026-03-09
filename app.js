@@ -622,60 +622,21 @@ function renderCards() {
 
   grid.innerHTML = sorted.map((w, i) => {
     const colorClass = CARD_COLORS[i % CARD_COLORS.length];
-    const hasTrans = w.translatedMeanings && w.translatedMeanings.length > 0;
-
     const createdTime = w.createdAt?.toDate?.()?.getTime() || new Date(w.createdAt || 0).getTime();
     const needsReview = w.clickCount < 3 && (now - createdTime) > threeDaysMs;
-
-    const meaningsHtml = w.meanings.map((m, mi) => {
-      const transDefs = hasTrans && w.translatedMeanings[mi]
-        ? w.translatedMeanings[mi].definitions : [];
-      const transText = transDefs[0] || m.definitions[0] || '';
-      const example = (m.examples || [])[0] || '';
-      return `<div class="card-meaning-item">
-        <span class="card-pos ${m.partOfSpeech === 'phrase' ? 'card-pos-phrase' : ''}">${m.partOfSpeech === 'phrase' ? '구/표현' : m.partOfSpeech}</span>
-        ${transText ? `<div class="card-translated">${transText}</div>` : ''}
-        ${example ? `<div class="card-example">💬 ${example}</div>` : ''}
-      </div>`;
-    }).join('');
-
-    const synsHtml = (w.synonyms?.length)
-      ? `<div class="card-syns"><span class="card-syn-label">≈</span>${w.synonyms.map(s => `<span class="card-syn-chip">${s}</span>`).join('')}</div>` : '';
-    const antsHtml = (w.antonyms?.length)
-      ? `<div class="card-syns"><span class="card-syn-label ant-label">↔</span>${w.antonyms.map(s => `<span class="card-ant-chip">${s}</span>`).join('')}</div>` : '';
-
     const masteryLevel = w.clickCount >= 20 ? 3 : w.clickCount >= 10 ? 2 : w.clickCount >= 3 ? 1 : 0;
     const masteryStars = ['', '⭐', '⭐⭐', '⭐⭐⭐'][masteryLevel];
-
-    const reviewBadge = needsReview ? `<span class="card-review-badge">🔴 복습</span>` : '';
-    const memoBack = w.memo ? `<div class="card-memo">📝 ${w.memo}</div>` : '';
     const safeId = w.id.replace(/'/g, "\\'");
 
+    // 카드는 단어+발음만 표시 — 클릭 시 모달 오픈
     return `
-      <div class="flip-card ${colorClass}" id="card-${w.id}" onclick="flipCard('${safeId}')">
-        <div class="flip-card-inner">
-          <div class="flip-card-front">
-            <span class="card-click-badge">👀 ${w.clickCount}</span>
-            ${masteryStars ? `<span class="card-mastery">${masteryStars}</span>` : ''}
-            ${reviewBadge}
-            <div class="card-word">${w.word}</div>
-            ${w.phonetic ? `<div class="card-phonetic">${w.phonetic}</div>` : '<div class="card-phonetic card-phrase-badge">💬 phrase</div>'}
-            <span class="card-hint">${(UI_TEXT[lang] || UI_TEXT.ko).cardHint}</span>
-            <button class="card-memo-btn" onclick="event.stopPropagation(); openMemoModal('${safeId}')" title="메모">${w.memo ? '📝' : '🖊️'}</button>
-          </div>
-          <div class="flip-card-back">
-            <div class="card-back-word">
-              ${w.word}
-              ${w.audioUrl ? `<button class="btn-audio" onclick="event.stopPropagation(); playAudio('${w.audioUrl}')" title="발음 듣기">🔊</button>` : ''}
-            </div>
-            ${w.phonetic ? `<div class="card-back-phonetic">${w.phonetic}</div>` : ''}
-            <div class="card-meanings">${meaningsHtml}</div>
-            ${synsHtml}${antsHtml}
-            ${memoBack}
-            <button class="card-refresh-btn" onclick="event.stopPropagation(); refreshWord('${safeId}','${w.word.replace(/'/g,"\\'")}')" title="뜻 새로고침">🔄</button>
-            <button class="card-delete-btn" onclick="event.stopPropagation(); deleteWord('${safeId}')" title="삭제">✕</button>
-          </div>
-        </div>
+      <div class="word-card ${colorClass}" id="card-${w.id}" onclick="openWordModal('${safeId}')">
+        <span class="card-click-badge">👀 ${w.clickCount}</span>
+        ${masteryStars ? `<span class="card-mastery">${masteryStars}</span>` : ''}
+        ${needsReview ? `<span class="card-review-badge">🔴 복습</span>` : ''}
+        <div class="card-word">${w.word}</div>
+        ${w.phonetic ? `<div class="card-phonetic">${w.phonetic}</div>` : '<div class="card-phonetic card-phrase-badge">💬 phrase</div>'}
+        ${w.memo ? `<span class="card-has-memo">📝</span>` : ''}
       </div>`;
   }).join('');
 }
@@ -817,6 +778,107 @@ async function flipCard(wordId) {
     updateMyStats();
     updateStreak();
   }
+}
+
+// ============================================================
+// 📖 단어 상세 모달
+// ============================================================
+function openWordModal(wordId) {
+  const w = userWords.find(u => u.id === wordId);
+  if (!w) return;
+
+  const lang = getUserLang();
+  const hasTrans = w.translatedMeanings && w.translatedMeanings.length > 0;
+
+  const meaningsHtml = w.meanings.map((m, mi) => {
+    const transDefs = hasTrans && w.translatedMeanings[mi] ? w.translatedMeanings[mi].definitions : [];
+    const transText = transDefs[0] || m.definitions[0] || '';
+    const example = (m.examples || [])[0] || '';
+    const posLabel = m.partOfSpeech === 'phrase' ? '구/표현' : m.partOfSpeech;
+    const posClass = m.partOfSpeech === 'phrase' ? 'card-pos card-pos-phrase' : 'card-pos';
+    return `<div class="wm-meaning">
+      <span class="${posClass}">${posLabel}</span>
+      ${transText ? `<div class="wm-translated">${transText}</div>` : ''}
+      ${example ? `<div class="wm-example">💬 ${example}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  const synsHtml = (w.synonyms?.length)
+    ? `<div class="wm-chips"><span class="wm-chip-label">≈</span>${w.synonyms.map(s => `<span class="card-syn-chip">${s}</span>`).join('')}</div>` : '';
+  const antsHtml = (w.antonyms?.length)
+    ? `<div class="wm-chips"><span class="wm-chip-label ant-label">↔</span>${w.antonyms.map(s => `<span class="card-ant-chip">${s}</span>`).join('')}</div>` : '';
+  const memoHtml = w.memo ? `<div class="wm-memo">📝 ${w.memo}</div>` : '';
+
+  document.getElementById('word-modal-content').innerHTML = `
+    <div class="wm-header">
+      <div class="wm-word">${w.word}${w.audioUrl ? `<button class="btn-audio" onclick="playAudio('${w.audioUrl}')">🔊</button>` : ''}</div>
+      ${w.phonetic ? `<div class="wm-phonetic">${w.phonetic}</div>` : ''}
+    </div>
+    <div class="wm-meanings">${meaningsHtml}</div>
+    ${synsHtml}${antsHtml}
+    ${memoHtml}
+  `;
+
+  const modal = document.getElementById('word-detail-modal');
+  modal.dataset.wordId = wordId;
+  modal.dataset.word = w.word;
+  document.getElementById('wm-memo-btn').textContent = w.memo ? '📝' : '🖊️';
+  modal.style.display = 'flex';
+  const box = modal.querySelector('.word-modal-box');
+  box.style.animation = 'none';
+  box.offsetHeight;
+  box.style.animation = '';
+
+  // audioUrl 없으면 API에서 동적으로 가져와 버튼 표시
+  if (!w.audioUrl && !w.meanings?.[0]?.partOfSpeech?.includes('phrase')) {
+    fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(w.word)}`)
+      .then(r => r.json()).then(data => {
+        for (const e of data) {
+          for (const p of (e.phonetics || [])) {
+            if (p.audio) {
+              const url = p.audio.startsWith('//') ? 'https:' + p.audio : p.audio;
+              // 버튼 동적 추가
+              const titleEl = document.querySelector('.wm-word');
+              if (titleEl && !titleEl.querySelector('.btn-audio')) {
+                const btn = document.createElement('button');
+                btn.className = 'btn-audio';
+                btn.title = '발음 듣기';
+                btn.textContent = '🔊';
+                btn.onclick = () => playAudio(url);
+                titleEl.appendChild(btn);
+              }
+              // Firestore에도 저장
+              db.collection('userWords').doc(wordId).update({ audioUrl: url });
+              const idx = userWords.findIndex(u => u.id === wordId);
+              if (idx !== -1) userWords[idx].audioUrl = url;
+              return;
+            }
+          }
+        }
+      }).catch(() => {});
+  }
+
+  // 클릭 카운트 증가
+  flipCard(wordId);
+}
+
+function closeWordModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('word-detail-modal').style.display = 'none';
+}
+
+function refreshWordFromModal() {
+  const modal = document.getElementById('word-detail-modal');
+  refreshWord(modal.dataset.wordId, modal.dataset.word);
+}
+function openMemoFromModal() {
+  const modal = document.getElementById('word-detail-modal');
+  openMemoModal(modal.dataset.wordId);
+}
+function deleteWordFromModal() {
+  const modal = document.getElementById('word-detail-modal');
+  document.getElementById('word-detail-modal').style.display = 'none';
+  deleteWord(modal.dataset.wordId);
 }
 
 // ============================================================

@@ -193,6 +193,19 @@
       </div>
     </header>
 
+    <!-- 📖 단어 상세 모달 -->
+    <div id="word-detail-modal" class="word-modal-overlay" style="display:none" onclick="closeWordModal(event)">
+      <div class="word-modal-box">
+        <div class="word-modal-actions">
+          <button class="wm-btn wm-refresh" id="wm-refresh-btn" onclick="refreshWordFromModal()" title="뜻 새로고침">🔄</button>
+          <button class="wm-btn wm-memo" id="wm-memo-btn" onclick="openMemoFromModal()" title="메모">🖊️</button>
+          <button class="wm-btn wm-delete" id="wm-delete-btn" onclick="deleteWordFromModal()" title="삭제">🗑️</button>
+          <button class="wm-btn wm-close" onclick="closeWordModal()" title="닫기">✕</button>
+        </div>
+        <div id="word-modal-content"></div>
+      </div>
+    </div>
+
     <!-- 📅 달력 모달 -->
     <div id="calendar-modal" class="cal-modal-overlay" style="display:none" onclick="closeCalendarModal(event)">
       <div class="cal-modal-box">
